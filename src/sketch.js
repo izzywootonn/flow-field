@@ -1,9 +1,5 @@
 import { computeCell, computeMaxStrength } from './flowField.js';
 
-// Accent color for sources (coral/orange)
-const SOURCE_COLOR = [255, 110, 80];
-const FIELD_COLOR = [190, 195, 220];
-
 /**
  * Factory for a p5 instance-mode sketch.
  * @param {() => object} getParams  Returns current control values
@@ -34,20 +30,20 @@ export default function makeSketch(getParams, getMode) {
       if (p.width !== params.width || p.height !== params.height) {
         p.resizeCanvas(params.width, params.height);
       }
-      p.background(13, 13, 15);
+      p.background(params.colorBg);
       drawField(params);
-      drawSources();
-      if (drawingLine) drawPreviewLine(drawingLine);
+      drawSources(params);
+      if (drawingLine) drawPreviewLine(drawingLine, params);
     };
 
     // ── Field rendering ───────────────────────────────────────────────────
     function drawField(params) {
-      const { cols, rows, lineLength, lineWeight, falloff, lengthByDist } = params;
+      const { cols, rows, lineLength, lineWeight, falloff, lengthByDist, colorField } = params;
       const cellW = p.width / cols;
       const cellH = p.height / rows;
 
       p.strokeWeight(lineWeight);
-      p.stroke(...FIELD_COLOR);
+      p.stroke(colorField);
       p.noFill();
 
       for (let col = 0; col < cols; col++) {
@@ -83,10 +79,10 @@ export default function makeSketch(getParams, getMode) {
     }
 
     // ── Source rendering ──────────────────────────────────────────────────
-    function drawSources() {
+    function drawSources({ colorSource }) {
       for (const src of sources) {
         p.noFill();
-        p.stroke(...SOURCE_COLOR);
+        p.stroke(colorSource);
         if (src.type === 'point') {
           p.strokeWeight(1.5);
           p.circle(src.x, src.y, 8);
@@ -96,7 +92,7 @@ export default function makeSketch(getParams, getMode) {
           p.strokeWeight(2);
           p.line(src.x1, src.y1, src.x2, src.y2);
           // Endpoint dots
-          p.fill(...SOURCE_COLOR);
+          p.fill(colorSource);
           p.noStroke();
           p.circle(src.x1, src.y1, 5);
           p.circle(src.x2, src.y2, 5);
@@ -104,8 +100,8 @@ export default function makeSketch(getParams, getMode) {
       }
     }
 
-    function drawPreviewLine({ x1, y1, x2, y2 }) {
-      p.stroke(...SOURCE_COLOR, 120);
+    function drawPreviewLine({ x1, y1, x2, y2 }, { colorSource }) {
+      p.stroke(colorSource + '88');
       p.strokeWeight(1.5);
       p.drawingContext.setLineDash([4, 4]);
       p.line(x1, y1, x2, y2);
@@ -213,5 +209,7 @@ export default function makeSketch(getParams, getMode) {
     };
 
     p.invalidateCache = invalidateCache;
+    p.getSources = () => sources;
+    p.getMaxStrength = () => cachedMaxStrength;
   };
 }

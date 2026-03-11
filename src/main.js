@@ -1,5 +1,13 @@
 import p5 from 'p5';
 import makeSketch from './sketch.js';
+import { exportSVG } from './exportSVG.js';
+
+// ── Color picker references ───────────────────────────────────────────────────
+const colorPickers = {
+  colorBg:     document.getElementById('colorBg'),
+  colorField:  document.getElementById('colorField'),
+  colorSource: document.getElementById('colorSource'),
+};
 
 // ── Control references ────────────────────────────────────────────────────────
 const sliders = {
@@ -44,6 +52,9 @@ function getParams() {
     lineWeight:   parseFloat(sliders.lineWeight.value),
     falloff:      parseFloat(sliders.falloff.value),
     lengthByDist: parseFloat(sliders.lengthByDist.value),
+    colorBg:      colorPickers.colorBg.value,
+    colorField:   colorPickers.colorField.value,
+    colorSource:  colorPickers.colorSource.value,
   };
 }
 
@@ -91,9 +102,18 @@ document.getElementById('modeLine').addEventListener('click', () => {
   hintEl.textContent = HINTS.line;
 });
 
+// ── Wire color pickers → redraw ───────────────────────────────────────────────
+for (const picker of Object.values(colorPickers)) {
+  picker.addEventListener('input', () => sketch.redraw());
+}
+
 // ── Action buttons ────────────────────────────────────────────────────────────
 document.getElementById('randomize').addEventListener('click', () => {
   sketch.addRandomSources(8);
+});
+
+document.getElementById('exportSvg').addEventListener('click', () => {
+  exportSVG(getParams(), sketch.getSources(), sketch.getMaxStrength());
 });
 
 document.getElementById('clear').addEventListener('click', () => {

@@ -144,7 +144,40 @@ input[type="range"]::-moz-range-thumb {
   gap: 8px;
 }
 
+/* Color pickers */
+.color-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.color-row label {
+  font-size: 11px;
+  color: var(--text);
+}
+
+input[type="color"] {
+  width: 32px;
+  height: 20px;
+  border: 1px solid var(--sidebar-border);
+  border-radius: 3px;
+  background: none;
+  cursor: pointer;
+  padding: 1px 2px;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 2px;
+}
+
 button#randomize,
+button#exportSvg,
 button#clear {
   width: 100%;
   padding: 8px 0;
@@ -160,9 +193,16 @@ button#clear {
   transition: all 0.15s;
 }
 
-button#randomize:hover {
+button#randomize:hover,
+button#exportSvg:hover {
   background: var(--accent);
   color: #fff;
+}
+
+button#exportSvg {
+  border-color: var(--accent);
+  background: transparent;
+  color: var(--accent);
 }
 
 button#clear {
