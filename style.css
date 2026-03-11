@@ -182,8 +182,20 @@ input[type="color"]::-webkit-color-swatch {
   border-radius: 2px;
 }
 
+/* Undo / Redo side-by-side row */
+.undo-redo {
+  display: flex;
+  gap: 8px;
+}
+
+.undo-redo button {
+  flex: 1;
+}
+
 button#randomize,
 button#exportSvg,
+button#undoBtn,
+button#redoBtn,
 button#clear {
   width: 100%;
   padding: 8px 0;
@@ -200,7 +212,9 @@ button#clear {
 }
 
 button#randomize:hover,
-button#exportSvg:hover {
+button#exportSvg:hover,
+button#undoBtn:hover,
+button#redoBtn:hover {
   background: var(--accent);
   color: #fff;
 }

@@ -136,3 +136,18 @@ document.getElementById('toggleSources').addEventListener('click', () => {
 document.getElementById('clear').addEventListener('click', () => {
   sketch.clearSources();
 });
+
+document.getElementById('undoBtn').addEventListener('click', () => sketch.undo());
+document.getElementById('redoBtn').addEventListener('click', () => sketch.redo());
+
+// ── Undo / Redo keyboard shortcuts ────────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  if (e.metaKey && !e.shiftKey && e.key === 'z') {
+    e.preventDefault();
+    sketch.undo();
+  }
+  if ((e.metaKey && e.shiftKey && e.key === 'z') || (e.metaKey && e.key === 'y')) {
+    e.preventDefault();
+    sketch.redo();
+  }
+});

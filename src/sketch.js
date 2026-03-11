@@ -72,6 +72,24 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
     // ── State ───────────────────────────────────────────────────────────────
     let sources = [];
 
+    // ── Undo / Redo ─────────────────────────────────────────────────────────
+    let undoStack = [];
+    let redoStack = [];
+
+    function saveState() {
+      undoStack.push(JSON.parse(JSON.stringify(sources)));
+      redoStack = [];
+    }
+
+    function restoreState(snapshot) {
+      sources.length = 0;
+      snapshot.forEach(s => sources.push(s));
+      selectedIdx    = -1;
+      selectedHandle = null;
+      invalidateCache();
+      p.redraw();
+    }
+
     // Drawing state
     let drawingLine = null;
     let previewPt   = null;   // cursor position for rubber-band preview
@@ -319,7 +337,12 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
       const mode = getMode();
 
       if (mode === 'edit') {
-        const hit      = hitTestSources(p.mouseX, p.mouseY);
+        const hit = hitTestSources(p.mouseX, p.mouseY);
+        // Save state before any drag — handle === -1 is a point source, body clicks
+        // are handled in mouseReleased so we skip them here
+        if (hit.idx >= 0 && (hit.handle === -1 || (hit.handle && hit.handle.kind !== 'body'))) {
+          saveState();
+        }
         selectedIdx    = hit.idx;
         selectedHandle = hit.handle;
         editDragging   = false;
@@ -385,6 +408,7 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
           const src = sources[selectedIdx];
           const sh  = selectedHandle;
           if (src.type === 'line' && sh?.kind === 'body') {
+            saveState();
             const s = sh.segIdx;
             const A = src.points[s];
             const B = src.points[s + 1];
@@ -405,6 +429,7 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
 
       if (mode === 'point') {
         if (!dragStarted && isOverCanvas()) {
+          saveState();
           sources.push({ type: 'point', x: mouseDownX, y: mouseDownY });
           invalidateCache();
           p.redraw();
@@ -417,6 +442,7 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
       if (getMode() !== 'edit') return;
       const hit = hitTestSources(p.mouseX, p.mouseY);
       if (hit.idx < 0 || hit.handle?.kind !== 'vertex') return;
+      saveState();
       const src = sources[hit.idx];
       const v   = src.points[hit.handle.h];
       if (v.type === 'smooth') {
@@ -448,6 +474,7 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
     p.keyPressed = () => {
       if (getMode() === 'line') {
         if (p.key === 'Enter' && drawingLine && drawingLine.points.length >= 2) {
+          saveState();
           sources.push({ type: 'line', points: drawingLine.points });
           invalidateCache();
         }
@@ -460,6 +487,7 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
       }
       if (getMode() === 'edit' && selectedIdx >= 0 &&
           (p.key === 'Delete' || p.key === 'Backspace')) {
+        saveState();
         sources.splice(selectedIdx, 1);
         selectedIdx    = -1;
         selectedHandle = null;
@@ -477,6 +505,7 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
 
     // ── Public API ──────────────────────────────────────────────────────────
     p.addRandomSources = (n = 8) => {
+      saveState();
       const w = p.width, h = p.height, margin = 40;
       for (let i = 0; i < n; i++) {
         if (Math.random() < 0.5) {
@@ -503,6 +532,7 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
     };
 
     p.clearSources = () => {
+      saveState();
       sources        = [];
       selectedIdx    = -1;
       selectedHandle = null;
@@ -514,6 +544,18 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
       drawingLine = null;
       previewPt   = null;
       p.redraw();
+    };
+
+    p.undo = () => {
+      if (!undoStack.length) return;
+      redoStack.push(JSON.parse(JSON.stringify(sources)));
+      restoreState(undoStack.pop());
+    };
+
+    p.redo = () => {
+      if (!redoStack.length) return;
+      undoStack.push(JSON.parse(JSON.stringify(sources)));
+      restoreState(redoStack.pop());
     };
 
     p.invalidateCache = invalidateCache;
