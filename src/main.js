@@ -36,6 +36,7 @@ const displays = {
 
 // ── Mode state ────────────────────────────────────────────────────────────────
 let currentMode  = 'point';
+let prevMode     = 'point';   // last non-edit mode; restored when exiting edit
 let showSources  = true;
 const hintEl = document.getElementById('hint');
 
@@ -82,7 +83,7 @@ function syncDisplays() {
 syncDisplays();
 
 // ── p5 sketch ─────────────────────────────────────────────────────────────────
-const sketch = new p5(makeSketch(getParams, getMode, getShowSources), document.getElementById('canvas-container'));
+const sketch = new p5(makeSketch(getParams, getMode, getShowSources, setMode, getReturnMode), document.getElementById('canvas-container'));
 
 // ── Wire sliders → redraw ─────────────────────────────────────────────────────
 for (const [key, input] of Object.entries(sliders)) {
@@ -100,12 +101,15 @@ for (const [key, input] of Object.entries(sliders)) {
 const modeButtons = ['modePoint', 'modeLine', 'modeEdit'];
 
 function setMode(mode) {
+  if (mode === 'edit' && currentMode !== 'edit') prevMode = currentMode;
   currentMode = mode;
   modeButtons.forEach(id => document.getElementById(id).classList.remove('active'));
   document.getElementById(`mode${mode.charAt(0).toUpperCase() + mode.slice(1)}`).classList.add('active');
   hintEl.textContent = HINTS[mode];
   sketch.redraw();
 }
+
+function getReturnMode() { return prevMode; }
 
 document.getElementById('modePoint').addEventListener('click', () => { sketch.cancelDrawingLine(); setMode('point'); });
 document.getElementById('modeLine').addEventListener('click',  () => { sketch.cancelDrawingLine(); setMode('line');  });

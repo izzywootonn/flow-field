@@ -86,7 +86,7 @@ function makeEdgePin(pWidth, pHeight) {
  * @param {() => string}  getMode        Returns 'point' | 'line' | 'edit'
  * @param {() => boolean} getShowSources Returns whether to render source markers
  */
-export default function makeSketch(getParams, getMode, getShowSources = () => true) {
+export default function makeSketch(getParams, getMode, getShowSources = () => true, setMode = () => {}, getReturnMode = () => 'point') {
   return (p) => {
     // ── State ───────────────────────────────────────────────────────────────
     let sources = [];
@@ -459,9 +459,19 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
 
       if (mode === 'edit') {
         const hit = hitTestSources(p.mouseX, p.mouseY);
+
+        // Click on empty space → exit edit mode
+        if (hit.idx < 0) {
+          setMode(getReturnMode());
+          selectedIdx    = -1;
+          selectedHandle = null;
+          p.redraw();
+          return;
+        }
+
         // Save state before any drag — handle === -1 is a point source, body clicks
         // are handled in mouseReleased so we skip them here
-        if (hit.idx >= 0 && (hit.handle === -1 || (hit.handle && hit.handle.kind !== 'body'))) {
+        if (hit.handle === -1 || (hit.handle && hit.handle.kind !== 'body')) {
           saveState();
         }
         selectedIdx    = hit.idx;
@@ -550,6 +560,9 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
 
       if (mode === 'point') {
         if (!dragStarted && isOverCanvas()) {
+          // Don't add a new source if clicking on an existing one —
+          // the doubleClicked handler will switch to edit mode instead
+          if (hitTestSources(mouseDownX, mouseDownY).idx >= 0) return;
           saveState();
           sources.push({ type: 'point', x: mouseDownX, y: mouseDownY });
           invalidateCache();
@@ -560,7 +573,23 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
     };
 
     p.doubleClicked = () => {
-      if (getMode() !== 'edit') return;
+      const mode = getMode();
+
+      // ── Point / Line mode: double-click an existing source to enter edit ──
+      if (mode === 'point' || mode === 'line') {
+        const hit = hitTestSources(p.mouseX, p.mouseY);
+        if (hit.idx < 0) return;
+        drawingLine    = null;
+        previewPt      = null;
+        setMode('edit');
+        selectedIdx    = hit.idx;
+        selectedHandle = hit.handle;
+        editDragging   = false;
+        p.redraw();
+        return;
+      }
+
+      if (mode !== 'edit') return;
       const hit = hitTestSources(p.mouseX, p.mouseY);
       if (hit.idx < 0 || hit.handle?.kind !== 'vertex') return;
       saveState();
@@ -593,6 +622,13 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
     };
 
     p.keyPressed = () => {
+      if (getMode() === 'edit' && p.key === 'Escape') {
+        setMode(getReturnMode());
+        selectedIdx    = -1;
+        selectedHandle = null;
+        p.redraw();
+        return false;
+      }
       if (getMode() === 'line') {
         if (p.key === 'Enter' && drawingLine && drawingLine.points.length >= 2) {
           saveState();
