@@ -43,7 +43,7 @@ const hintEl = document.getElementById('hint');
 const HINTS = {
   point: 'Click to place a point source',
   line:  'Click to place points · Enter to finish · Escape to cancel',
-  edit:  'Click to select · Drag to move · Double-click vertex to toggle bezier · Delete to remove',
+  edit:  'Click to select · Drag empty space to multi-select · Drag to move · Double-click vertex to toggle bezier · Delete to remove',
 };
 
 // ── Read params ───────────────────────────────────────────────────────────────
@@ -93,6 +93,13 @@ for (const [key, input] of Object.entries(sliders)) {
     if (key === 'falloff' || key === 'pull') {
       sketch.invalidateCache();
     }
+    sketch.redraw();
+  });
+  // Double-click any slider to reset it to its HTML default value
+  input.addEventListener('dblclick', () => {
+    input.value = input.defaultValue;
+    syncDisplays();
+    if (key === 'falloff' || key === 'pull') sketch.invalidateCache();
     sketch.redraw();
   });
 }

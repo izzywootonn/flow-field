@@ -114,6 +114,8 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
       snapshot.forEach(s => sources.push(s));
       selectedIdx    = -1;
       selectedHandle = null;
+      multiSelected.clear();
+      groupDragOrigins = null;
       invalidateCache();
       p.redraw();
     }
@@ -132,6 +134,14 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
     let editDragging   = false;
     let hoverIdx       = -1;
     let hoverHandle    = null;
+
+    // Marquee / multi-select state
+    let mouseDownOnEmpty = false;  // mousedown hit empty space (potential marquee)
+    let marqueeActive    = false;  // rubber-band rect currently being drawn
+    let marqueeStart     = { x: 0, y: 0 };
+    let marqueeEnd       = { x: 0, y: 0 };
+    let multiSelected    = new Map();  // sourceIdx → Set<vertexIdx> | null (null = whole point source)
+    let groupDragOrigins = null;       // {idx → deep-cloned source} snapshot at group-drag start
 
     let cachedMaxStrength = 1;
 
@@ -153,6 +163,7 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
       if (getShowSources()) drawSources(params);
       if (drawingLine) drawPreviewLine(drawingLine, params);
       if (getMode() === 'edit') drawEdgeIndicators(params);
+      if (getMode() === 'edit' && marqueeActive) drawMarqueeRect();
     };
 
     // ── Field rendering ─────────────────────────────────────────────────────
@@ -204,9 +215,17 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
 
       for (let i = 0; i < sources.length; i++) {
         const src        = sources[i];
-        const isSelected = inEdit && i === selectedIdx;
-        const isHovered  = inEdit && i === hoverIdx && !isSelected;
-        const c = isSelected ? '#ffffff' : isHovered ? colorSource + 'bb' : colorSource;
+        const isSingleSel  = inEdit && i === selectedIdx;
+        const inMultiSel   = inEdit && multiSelected.has(i);
+        const multiVerts   = inMultiSel ? multiSelected.get(i) : null;
+        // "fully selected" = single-select, or point source in multi-select,
+        // or all vertices of a line source are in the selection
+        const isFullySel   = isSingleSel ||
+                             (inMultiSel && (src.type === 'point' || multiVerts === null ||
+                              multiVerts.size === src.points.length));
+        const isSelected   = isFullySel;   // kept for existing rendering logic below
+        const isHovered    = inEdit && i === hoverIdx && !isFullySel && !inMultiSel;
+        const c = isFullySel ? '#ffffff' : isHovered ? colorSource + 'bb' : colorSource;
 
         p.stroke(c);
         p.noFill();
@@ -240,7 +259,8 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
 
             for (let h = 0; h < src.points.length; h++) {
               const v             = src.points[h];
-              const isSelVtx      = isSelected && selectedHandle?.kind === 'vertex' && selectedHandle.h === h;
+              const isSelVtx      = (isSingleSel && selectedHandle?.kind === 'vertex' && selectedHandle.h === h) ||
+                                    (inMultiSel  && multiVerts !== null && multiVerts.has(h));
               const vtxColor      = isSelVtx ? '#ffffff' : c;
 
               // Vertex square
@@ -350,6 +370,21 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
       }
     }
 
+    // ── Marquee rect ────────────────────────────────────────────────────────
+    function drawMarqueeRect() {
+      p.noFill();
+      p.stroke('#ffffff55');
+      p.strokeWeight(1);
+      p.rectMode(p.CORNER);  // reset from CENTER mode set by drawSources vertex squares
+      p.drawingContext.setLineDash([4, 4]);
+      p.rect(
+        marqueeStart.x, marqueeStart.y,
+        marqueeEnd.x - marqueeStart.x,
+        marqueeEnd.y - marqueeStart.y
+      );
+      p.drawingContext.setLineDash([]);
+    }
+
     // ── Hit detection ───────────────────────────────────────────────────────
     function hitTestSources(mx, my) {
       // Priority 0: bezier control handles (cp1 / cp2)
@@ -439,6 +474,32 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
       return { idx: -1, handle: null, segIdx: -1 };
     }
 
+    /**
+     * Return a Set of source indices whose anchor points (vertex / cp1 / cp2)
+     * fall inside the given rectangle (coordinates auto-normalised).
+     */
+    function hitTestSourcesInRect(x1, y1, x2, y2) {
+      const minX = Math.min(x1, x2), maxX = Math.max(x1, x2);
+      const minY = Math.min(y1, y2), maxY = Math.max(y1, y2);
+      const inBox = (x, y) => x >= minX && x <= maxX && y >= minY && y <= maxY;
+      // Returns Map<sourceIdx, Set<vertexIdx> | null>
+      // Point sources: null (whole source). Line sources: Set of vertex indices inside the rect.
+      const result = new Map();
+      for (let i = 0; i < sources.length; i++) {
+        const src = sources[i];
+        if (src.type === 'point') {
+          if (inBox(src.x, src.y)) result.set(i, null);
+        } else {
+          const verts = new Set();
+          for (let h = 0; h < src.points.length; h++) {
+            if (inBox(src.points[h].x, src.points[h].y)) verts.add(h);
+          }
+          if (verts.size > 0) result.set(i, verts);
+        }
+      }
+      return result;
+    }
+
     // ── Mouse events ────────────────────────────────────────────────────────
     function isOverCanvas() {
       return p.mouseX >= 0 && p.mouseX <= p.width &&
@@ -455,6 +516,8 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
         // Clicking outside the canvas while in edit mode exits edit cleanly,
         // so sidebar slider clicks don't accidentally distort anchor points.
         if (getMode() === 'edit') {
+          multiSelected.clear();
+          groupDragOrigins = null;
           setMode(getReturnMode());
           selectedIdx    = -1;
           selectedHandle = null;
@@ -471,14 +534,35 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
       if (mode === 'edit') {
         const hit = hitTestSources(p.mouseX, p.mouseY);
 
-        // Click on empty space → exit edit mode
+        // Click on empty space → start potential marquee (defer exit to mouseReleased)
         if (hit.idx < 0) {
-          setMode(getReturnMode());
+          mouseDownOnEmpty = true;
+          marqueeActive    = false;
+          marqueeStart     = { x: p.mouseX, y: p.mouseY };
+          marqueeEnd       = { ...marqueeStart };
           selectedIdx    = -1;
           selectedHandle = null;
           p.redraw();
           return;
         }
+
+        mouseDownOnEmpty = false;
+
+        // If clicking a source that is already multi-selected → start group drag
+        if (multiSelected.size > 0 && multiSelected.has(hit.idx)) {
+          saveState();
+          groupDragOrigins = {};
+          for (const idx of multiSelected.keys()) {
+            groupDragOrigins[idx] = JSON.parse(JSON.stringify(sources[idx]));
+          }
+          editDragging = false;
+          p.redraw();
+          return;
+        }
+
+        // Clicking a source not in multiSelected → clear multi-select, single-select
+        multiSelected.clear();
+        groupDragOrigins = null;
 
         // Save state before any drag — handle === -1 is a point source, body clicks
         // are handled in mouseReleased so we skip them here
@@ -507,6 +591,40 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
       const mode = getMode();
 
       if (mode === 'edit') {
+        // Marquee drag — mousedown was on empty space
+        if (mouseDownOnEmpty) {
+          if (Math.hypot(p.mouseX - mouseDownX, p.mouseY - mouseDownY) > 5) marqueeActive = true;
+          if (marqueeActive) { marqueeEnd = { x: p.mouseX, y: p.mouseY }; p.redraw(); }
+          return;
+        }
+
+        // Group drag — multi-selected sources moving together
+        if (groupDragOrigins !== null) {
+          if (Math.hypot(p.mouseX - mouseDownX, p.mouseY - mouseDownY) > 3) editDragging = true;
+          if (!editDragging) return;
+          const dx = p.mouseX - mouseDownX, dy = p.mouseY - mouseDownY;
+          for (const [idx, vertexSet] of multiSelected) {
+            const src    = sources[idx];
+            const origin = groupDragOrigins[idx];
+            if (src.type === 'point' || vertexSet === null) {
+              // Move the whole point source
+              src.x = origin.x + dx;
+              src.y = origin.y + dy;
+            } else {
+              // Move only the selected vertices (and their control points)
+              for (const h of vertexSet) {
+                const v = src.points[h], ov = origin.points[h];
+                v.x = ov.x + dx; v.y = ov.y + dy;
+                v.cp1.x = ov.cp1.x + dx; v.cp1.y = ov.cp1.y + dy;
+                v.cp2.x = ov.cp2.x + dx; v.cp2.y = ov.cp2.y + dy;
+              }
+            }
+          }
+          invalidateCache();
+          p.redraw();
+          return;
+        }
+
         if (selectedIdx < 0) return;
         if (Math.hypot(p.mouseX - mouseDownX, p.mouseY - mouseDownY) > 3) editDragging = true;
         if (!editDragging) return;
@@ -565,6 +683,33 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
       const mode = getMode();
 
       if (mode === 'edit') {
+        // Marquee release
+        if (mouseDownOnEmpty) {
+          mouseDownOnEmpty = false;
+          if (marqueeActive) {
+            multiSelected = hitTestSourcesInRect(
+              marqueeStart.x, marqueeStart.y, marqueeEnd.x, marqueeEnd.y
+            );
+            marqueeActive = false;
+            if (multiSelected.size === 0) setMode(getReturnMode()); // nothing caught → exit
+            p.redraw();
+          } else {
+            // Short click on empty space → exit edit as before
+            multiSelected.clear();
+            setMode(getReturnMode());
+            p.redraw();
+          }
+          return;
+        }
+
+        // Group drag release
+        if (groupDragOrigins !== null) {
+          groupDragOrigins = null;
+          editDragging     = false;
+          p.redraw();
+          return;
+        }
+
         if (!editDragging && selectedIdx >= 0) {
           const src = sources[selectedIdx];
           const sh  = selectedHandle;
@@ -653,6 +798,8 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
 
     p.keyPressed = () => {
       if (getMode() === 'edit' && p.key === 'Escape') {
+        multiSelected.clear();
+        groupDragOrigins = null;
         setMode(getReturnMode());
         selectedIdx    = -1;
         selectedHandle = null;
@@ -672,15 +819,40 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
         }
         return false;
       }
-      if (getMode() === 'edit' && selectedIdx >= 0 &&
-          (p.key === 'Delete' || p.key === 'Backspace')) {
-        saveState();
-        sources.splice(selectedIdx, 1);
-        selectedIdx    = -1;
-        selectedHandle = null;
-        invalidateCache();
-        p.redraw();
-        return false;
+      if (getMode() === 'edit' && (p.key === 'Delete' || p.key === 'Backspace')) {
+        // Multi-delete takes priority
+        if (multiSelected.size > 0) {
+          saveState();
+          const toDelete = [];
+          for (const [idx, vertexSet] of multiSelected) {
+            const src = sources[idx];
+            if (src.type === 'point' || vertexSet === null) {
+              toDelete.push(idx);
+            } else {
+              // Remove selected vertices; if fewer than 2 remain, delete the whole line
+              src.points = src.points.filter((_, h) => !vertexSet.has(h));
+              if (src.points.length < 2) toDelete.push(idx);
+            }
+          }
+          toDelete.sort((a, b) => b - a);
+          for (const idx of toDelete) sources.splice(idx, 1);
+          multiSelected.clear();
+          selectedIdx    = -1;
+          selectedHandle = null;
+          invalidateCache();
+          p.redraw();
+          return false;
+        }
+        // Single-delete
+        if (selectedIdx >= 0) {
+          saveState();
+          sources.splice(selectedIdx, 1);
+          selectedIdx    = -1;
+          selectedHandle = null;
+          invalidateCache();
+          p.redraw();
+          return false;
+        }
       }
     };
 
@@ -692,6 +864,8 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
 
     // ── Public API ──────────────────────────────────────────────────────────
     p.addRandomSources = (n = 8) => {
+      multiSelected.clear();
+      groupDragOrigins = null;
       saveState();
       const w = p.width, h = p.height, margin = 40;
       for (let i = 0; i < n; i++) {
@@ -723,6 +897,8 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
       sources        = [];
       selectedIdx    = -1;
       selectedHandle = null;
+      multiSelected.clear();
+      groupDragOrigins = null;
       cachedMaxStrength = 1;
       p.redraw();
     };
