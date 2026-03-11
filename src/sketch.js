@@ -73,6 +73,7 @@ export default function makeSketch(getParams, getMode) {
 
     // Drawing state
     let drawingLine = null;
+    let previewPt   = null;   // cursor position for rubber-band preview
     let dragStarted = false;
     let mouseDownX  = 0;
     let mouseDownY  = 0;
@@ -226,11 +227,24 @@ export default function makeSketch(getParams, getMode) {
     }
 
     function drawPreviewLine({ points }, { colorSource }) {
+      if (points.length === 0) return;
       p.stroke(colorSource + '88');
       p.strokeWeight(1.5);
+      p.noFill();
       p.drawingContext.setLineDash([4, 4]);
-      p.line(points[0].x, points[0].y, points[1].x, points[1].y);
+      // Confirmed segments
+      for (let s = 0; s < points.length - 1; s++) {
+        p.line(points[s].x, points[s].y, points[s+1].x, points[s+1].y);
+      }
+      // Rubber-band to cursor
+      if (previewPt) {
+        const last = points[points.length - 1];
+        p.line(last.x, last.y, previewPt.x, previewPt.y);
+      }
       p.drawingContext.setLineDash([]);
+      // Vertex dots
+      p.fill(colorSource + '88'); p.noStroke();
+      for (const pt of points) p.circle(pt.x, pt.y, 5);
     }
 
     // ── Hit detection ───────────────────────────────────────────────────────
@@ -313,7 +327,13 @@ export default function makeSketch(getParams, getMode) {
       }
 
       if (mode === 'line') {
-        drawingLine = { points: [makeVertex(p.mouseX, p.mouseY), makeVertex(p.mouseX, p.mouseY)] };
+        if (!drawingLine) {
+          drawingLine = { points: [makeVertex(p.mouseX, p.mouseY)] };
+        } else {
+          drawingLine.points.push(makeVertex(p.mouseX, p.mouseY));
+        }
+        previewPt = { x: p.mouseX, y: p.mouseY };
+        p.redraw();
       }
     };
 
@@ -354,10 +374,6 @@ export default function makeSketch(getParams, getMode) {
 
       if (!isOverCanvas() && !drawingLine) return;
       if (Math.hypot(p.mouseX - mouseDownX, p.mouseY - mouseDownY) > 4) dragStarted = true;
-      if (mode === 'line' && drawingLine) {
-        drawingLine.points[1] = makeVertex(p.mouseX, p.mouseY);
-        p.redraw();
-      }
     };
 
     p.mouseReleased = () => {
@@ -392,17 +408,6 @@ export default function makeSketch(getParams, getMode) {
           invalidateCache();
           p.redraw();
         }
-      } else if (mode === 'line') {
-        if (drawingLine) {
-          const dx = drawingLine.points[1].x - drawingLine.points[0].x;
-          const dy = drawingLine.points[1].y - drawingLine.points[0].y;
-          if (Math.hypot(dx, dy) > 8) {
-            sources.push({ type: 'line', points: [...drawingLine.points] });
-            invalidateCache();
-          }
-          drawingLine = null;
-          p.redraw();
-        }
       }
       dragStarted = false;
     };
@@ -425,6 +430,11 @@ export default function makeSketch(getParams, getMode) {
     };
 
     p.mouseMoved = () => {
+      if (getMode() === 'line' && drawingLine) {
+        previewPt = { x: p.mouseX, y: p.mouseY };
+        p.redraw();
+        return;
+      }
       if (getMode() !== 'edit') return;
       const hit = hitTestSources(p.mouseX, p.mouseY);
       if (hit.idx !== hoverIdx || hit.handle !== hoverHandle) {
@@ -435,6 +445,18 @@ export default function makeSketch(getParams, getMode) {
     };
 
     p.keyPressed = () => {
+      if (getMode() === 'line') {
+        if (p.key === 'Enter' && drawingLine && drawingLine.points.length >= 2) {
+          sources.push({ type: 'line', points: drawingLine.points });
+          invalidateCache();
+        }
+        if (p.key === 'Enter' || p.key === 'Escape') {
+          drawingLine = null;
+          previewPt   = null;
+          p.redraw();
+        }
+        return false;
+      }
       if (getMode() === 'edit' && selectedIdx >= 0 &&
           (p.key === 'Delete' || p.key === 'Backspace')) {
         sources.splice(selectedIdx, 1);
@@ -484,6 +506,12 @@ export default function makeSketch(getParams, getMode) {
       selectedIdx    = -1;
       selectedHandle = null;
       cachedMaxStrength = 1;
+      p.redraw();
+    };
+
+    p.cancelDrawingLine = () => {
+      drawingLine = null;
+      previewPt   = null;
       p.redraw();
     };
 

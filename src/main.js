@@ -38,7 +38,7 @@ const hintEl = document.getElementById('hint');
 
 const HINTS = {
   point: 'Click to place a point source',
-  line:  'Click and drag to draw a line source',
+  line:  'Click to place points · Enter to finish · Escape to cancel',
   edit:  'Click to select · Drag to move · Double-click vertex to toggle bezier · Delete to remove',
 };
 
@@ -99,9 +99,9 @@ function setMode(mode) {
   sketch.redraw();
 }
 
-document.getElementById('modePoint').addEventListener('click', () => setMode('point'));
-document.getElementById('modeLine').addEventListener('click',  () => setMode('line'));
-document.getElementById('modeEdit').addEventListener('click',  () => setMode('edit'));
+document.getElementById('modePoint').addEventListener('click', () => { sketch.cancelDrawingLine(); setMode('point'); });
+document.getElementById('modeLine').addEventListener('click',  () => { sketch.cancelDrawingLine(); setMode('line');  });
+document.getElementById('modeEdit').addEventListener('click',  () => { sketch.cancelDrawingLine(); setMode('edit');  });
 
 // ── Wire color pickers → redraw ───────────────────────────────────────────────
 for (const picker of Object.values(colorPickers)) {
