@@ -137,6 +137,12 @@ input[type="range"]::-moz-range-thumb {
   color: var(--accent);
 }
 
+/* Toggle button inside color-row — compact, no flex-stretch */
+#toggleSources {
+  flex: none;
+  padding: 4px 10px;
+}
+
 /* Action buttons */
 .actions {
   display: flex;

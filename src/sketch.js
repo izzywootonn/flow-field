@@ -63,10 +63,11 @@ function splitBezierAt(A, B, t) {
 // ── Sketch factory ────────────────────────────────────────────────────────────
 
 /**
- * @param {() => object} getParams  Returns current control values
- * @param {() => string} getMode    Returns 'point' | 'line' | 'edit'
+ * @param {() => object}  getParams      Returns current control values
+ * @param {() => string}  getMode        Returns 'point' | 'line' | 'edit'
+ * @param {() => boolean} getShowSources Returns whether to render source markers
  */
-export default function makeSketch(getParams, getMode) {
+export default function makeSketch(getParams, getMode, getShowSources = () => true) {
   return (p) => {
     // ── State ───────────────────────────────────────────────────────────────
     let sources = [];
@@ -103,7 +104,7 @@ export default function makeSketch(getParams, getMode) {
       }
       p.background(params.colorBg);
       drawField(params);
-      drawSources(params);
+      if (getShowSources()) drawSources(params);
       if (drawingLine) drawPreviewLine(drawingLine, params);
     };
 

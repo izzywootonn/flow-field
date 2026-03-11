@@ -6,7 +6,7 @@ import { computeCell } from './flowField.js';
  * @param {Array}  sources    Array of point/line sources
  * @param {number} maxStrength  Cached max strength for length normalisation
  */
-export function exportSVG(params, sources, maxStrength) {
+export function exportSVG(params, sources, maxStrength, showSources = true) {
   const {
     width, height, cols, rows,
     lineLength, lineWeight, falloff, lengthByDist,
@@ -69,13 +69,15 @@ export function exportSVG(params, sources, maxStrength) {
   }
 
   // ── Assemble SVG ───────────────────────────────────────────────────────
+  const sourcesGroup = showSources
+    ? `  <g stroke="${colorSource}" fill="${colorSource}">\n${sourceMarkers}  </g>\n`
+    : '';
+
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
   <rect width="${width}" height="${height}" fill="${colorBg}" />
   <g stroke="${colorField}" stroke-width="${lineWeight}" stroke-linecap="round" fill="none">
 ${fieldLines}  </g>
-  <g stroke="${colorSource}" fill="${colorSource}">
-${sourceMarkers}  </g>
-</svg>`;
+${sourcesGroup}</svg>`;
 
   const blob = new Blob([svg], { type: 'image/svg+xml' });
   const url = URL.createObjectURL(blob);

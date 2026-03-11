@@ -33,7 +33,8 @@ const displays = {
 };
 
 // ── Mode state ────────────────────────────────────────────────────────────────
-let currentMode = 'point';
+let currentMode  = 'point';
+let showSources  = true;
 const hintEl = document.getElementById('hint');
 
 const HINTS = {
@@ -63,6 +64,10 @@ function getMode() {
   return currentMode;
 }
 
+function getShowSources() {
+  return showSources;
+}
+
 // ── Update display values ─────────────────────────────────────────────────────
 function syncDisplays() {
   for (const [key, input] of Object.entries(sliders)) {
@@ -74,7 +79,7 @@ function syncDisplays() {
 syncDisplays();
 
 // ── p5 sketch ─────────────────────────────────────────────────────────────────
-const sketch = new p5(makeSketch(getParams, getMode), document.getElementById('canvas-container'));
+const sketch = new p5(makeSketch(getParams, getMode, getShowSources), document.getElementById('canvas-container'));
 
 // ── Wire sliders → redraw ─────────────────────────────────────────────────────
 for (const [key, input] of Object.entries(sliders)) {
@@ -114,7 +119,15 @@ document.getElementById('randomize').addEventListener('click', () => {
 });
 
 document.getElementById('exportSvg').addEventListener('click', () => {
-  exportSVG(getParams(), sketch.getSources(), sketch.getMaxStrength());
+  exportSVG(getParams(), sketch.getSources(), sketch.getMaxStrength(), showSources);
+});
+
+document.getElementById('toggleSources').addEventListener('click', () => {
+  showSources = !showSources;
+  const btn = document.getElementById('toggleSources');
+  btn.textContent = showSources ? 'On' : 'Off';
+  btn.classList.toggle('active', showSources);
+  sketch.redraw();
 });
 
 document.getElementById('clear').addEventListener('click', () => {
