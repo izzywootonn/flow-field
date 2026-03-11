@@ -257,9 +257,7 @@ button#clear:hover {
   font-size: 10px;
   color: var(--text-dim);
   line-height: 1.5;
-  margin-top: auto;
-  padding-top: 12px;
-  border-top: 1px solid var(--sidebar-border);
+  margin-top: 8px;
 }
 
 /* Canvas container */
