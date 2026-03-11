@@ -1,0 +1,101 @@
+import p5 from 'p5';
+import makeSketch from './sketch.js';
+
+// ── Control references ────────────────────────────────────────────────────────
+const sliders = {
+  canvasWidth:  document.getElementById('canvasWidth'),
+  canvasHeight: document.getElementById('canvasHeight'),
+  cols:         document.getElementById('cols'),
+  rows:         document.getElementById('rows'),
+  lineLength:   document.getElementById('lineLength'),
+  lineWeight:   document.getElementById('lineWeight'),
+  falloff:      document.getElementById('falloff'),
+  lengthByDist: document.getElementById('lengthByDist'),
+};
+
+const displays = {
+  canvasWidth:  document.getElementById('canvasWidthVal'),
+  canvasHeight: document.getElementById('canvasHeightVal'),
+  cols:         document.getElementById('colsVal'),
+  rows:         document.getElementById('rowsVal'),
+  lineLength:   document.getElementById('lineLengthVal'),
+  lineWeight:   document.getElementById('lineWeightVal'),
+  falloff:      document.getElementById('falloffVal'),
+  lengthByDist: document.getElementById('lengthByDistVal'),
+};
+
+// ── Mode state ────────────────────────────────────────────────────────────────
+let currentMode = 'point';
+const hintEl = document.getElementById('hint');
+
+const HINTS = {
+  point: 'Click to place a point source',
+  line:  'Click and drag to draw a line source',
+};
+
+// ── Read params ───────────────────────────────────────────────────────────────
+function getParams() {
+  return {
+    width:        parseInt(sliders.canvasWidth.value),
+    height:       parseInt(sliders.canvasHeight.value),
+    cols:         parseInt(sliders.cols.value),
+    rows:         parseInt(sliders.rows.value),
+    lineLength:   parseInt(sliders.lineLength.value),
+    lineWeight:   parseFloat(sliders.lineWeight.value),
+    falloff:      parseFloat(sliders.falloff.value),
+    lengthByDist: parseFloat(sliders.lengthByDist.value),
+  };
+}
+
+function getMode() {
+  return currentMode;
+}
+
+// ── Update display values ─────────────────────────────────────────────────────
+function syncDisplays() {
+  for (const [key, input] of Object.entries(sliders)) {
+    const val = parseFloat(input.value);
+    displays[key].textContent = Number.isInteger(val) ? val : val.toFixed(2);
+  }
+}
+
+syncDisplays();
+
+// ── p5 sketch ─────────────────────────────────────────────────────────────────
+const sketch = new p5(makeSketch(getParams, getMode), document.getElementById('canvas-container'));
+
+// ── Wire sliders → redraw ─────────────────────────────────────────────────────
+for (const [key, input] of Object.entries(sliders)) {
+  input.addEventListener('input', () => {
+    syncDisplays();
+    // Falloff change requires cache invalidation (strength normalisation)
+    if (key === 'falloff') {
+      sketch.invalidateCache();
+    }
+    sketch.redraw();
+  });
+}
+
+// ── Mode buttons ──────────────────────────────────────────────────────────────
+document.getElementById('modePoint').addEventListener('click', () => {
+  currentMode = 'point';
+  document.getElementById('modePoint').classList.add('active');
+  document.getElementById('modeLine').classList.remove('active');
+  hintEl.textContent = HINTS.point;
+});
+
+document.getElementById('modeLine').addEventListener('click', () => {
+  currentMode = 'line';
+  document.getElementById('modeLine').classList.add('active');
+  document.getElementById('modePoint').classList.remove('active');
+  hintEl.textContent = HINTS.line;
+});
+
+// ── Action buttons ────────────────────────────────────────────────────────────
+document.getElementById('randomize').addEventListener('click', () => {
+  sketch.addRandomSources(8);
+});
+
+document.getElementById('clear').addEventListener('click', () => {
+  sketch.clearSources();
+});

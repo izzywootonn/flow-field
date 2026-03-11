@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flow Field</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <aside id="sidebar">
+    <h1>Flow Field</h1>
+
+    <section class="control-group">
+      <h2>Canvas</h2>
+      <div class="control">
+        <label for="canvasWidth">Width <span id="canvasWidthVal">800</span></label>
+        <input type="range" id="canvasWidth" min="400" max="1400" step="10" value="800" />
+      </div>
+      <div class="control">
+        <label for="canvasHeight">Height <span id="canvasHeightVal">600</span></label>
+        <input type="range" id="canvasHeight" min="300" max="900" step="10" value="600" />
+      </div>
+    </section>
+
+    <section class="control-group">
+      <h2>Grid</h2>
+      <div class="control">
+        <label for="cols">Columns <span id="colsVal">40</span></label>
+        <input type="range" id="cols" min="5" max="120" step="1" value="40" />
+      </div>
+      <div class="control">
+        <label for="rows">Rows <span id="rowsVal">30</span></label>
+        <input type="range" id="rows" min="5" max="80" step="1" value="30" />
+      </div>
+    </section>
+
+    <section class="control-group">
+      <h2>Lines</h2>
+      <div class="control">
+        <label for="lineLength">Length <span id="lineLengthVal">12</span></label>
+        <input type="range" id="lineLength" min="2" max="40" step="1" value="12" />
+      </div>
+      <div class="control">
+        <label for="lineWeight">Weight <span id="lineWeightVal">1.0</span></label>
+        <input type="range" id="lineWeight" min="0.5" max="6" step="0.5" value="1" />
+      </div>
+    </section>
+
+    <section class="control-group">
+      <h2>Field</h2>
+      <div class="control">
+        <label for="falloff">Falloff <span id="falloffVal">1.5</span></label>
+        <input type="range" id="falloff" min="0.5" max="3" step="0.1" value="1.5" />
+      </div>
+      <div class="control">
+        <label for="lengthByDist">Dist. Length <span id="lengthByDistVal">0.5</span></label>
+        <input type="range" id="lengthByDist" min="0" max="1" step="0.05" value="0.5" />
+      </div>
+    </section>
+
+    <section class="control-group">
+      <h2>Draw Mode</h2>
+      <div class="mode-toggle">
+        <button id="modePoint" class="mode-btn active">Point</button>
+        <button id="modeLine" class="mode-btn">Line</button>
+      </div>
+    </section>
+
+    <section class="control-group actions">
+      <button id="randomize">Randomize</button>
+      <button id="clear" class="secondary">Clear</button>
+    </section>
+
+    <p class="hint" id="hint">Click to place a point source</p>
+  </aside>
+
+  <main id="canvas-container"></main>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
