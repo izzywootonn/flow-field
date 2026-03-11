@@ -110,7 +110,7 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
 
     // ── Field rendering ─────────────────────────────────────────────────────
     function drawField(params) {
-      const { cols, rows, lineLength, lineWeight, falloff, lengthByDist, colorField } = params;
+      const { cols, rows, lineLength, lineWeight, falloff, lengthByDist, pull, colorField } = params;
       const cellW = p.width / cols;
       const cellH = p.height / rows;
 
@@ -127,7 +127,7 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
             drawFieldLine(cx, cy, 0, lineLength);
             continue;
           }
-          const { angle, strength } = computeCell(cx, cy, sources, falloff);
+          const { angle, strength } = computeCell(cx, cy, sources, falloff, pull);
           const norm = Math.min(strength / cachedMaxStrength, 1);
           const len  = lineLength * (1 - lengthByDist + lengthByDist * norm);
           drawFieldLine(cx, cy, angle, len);
@@ -471,8 +471,8 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
 
     // ── Cache ───────────────────────────────────────────────────────────────
     function invalidateCache() {
-      const { falloff } = getParams();
-      cachedMaxStrength = computeMaxStrength(sources, falloff, p.width, p.height);
+      const { falloff, pull } = getParams();
+      cachedMaxStrength = computeMaxStrength(sources, falloff, p.width, p.height, pull);
     }
 
     // ── Public API ──────────────────────────────────────────────────────────

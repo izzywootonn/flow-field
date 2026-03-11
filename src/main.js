@@ -19,6 +19,7 @@ const sliders = {
   lineWeight:   document.getElementById('lineWeight'),
   falloff:      document.getElementById('falloff'),
   lengthByDist: document.getElementById('lengthByDist'),
+  pull:         document.getElementById('pull'),
 };
 
 const displays = {
@@ -30,6 +31,7 @@ const displays = {
   lineWeight:   document.getElementById('lineWeightVal'),
   falloff:      document.getElementById('falloffVal'),
   lengthByDist: document.getElementById('lengthByDistVal'),
+  pull:         document.getElementById('pullVal'),
 };
 
 // ── Mode state ────────────────────────────────────────────────────────────────
@@ -54,6 +56,7 @@ function getParams() {
     lineWeight:   parseFloat(sliders.lineWeight.value),
     falloff:      parseFloat(sliders.falloff.value),
     lengthByDist: parseFloat(sliders.lengthByDist.value),
+    pull:         parseFloat(sliders.pull.value),
     colorBg:      colorPickers.colorBg.value,
     colorField:   colorPickers.colorField.value,
     colorSource:  colorPickers.colorSource.value,
@@ -85,8 +88,8 @@ const sketch = new p5(makeSketch(getParams, getMode, getShowSources), document.g
 for (const [key, input] of Object.entries(sliders)) {
   input.addEventListener('input', () => {
     syncDisplays();
-    // Falloff change requires cache invalidation (strength normalisation)
-    if (key === 'falloff') {
+    // Falloff and pull changes affect cached max strength
+    if (key === 'falloff' || key === 'pull') {
       sketch.invalidateCache();
     }
     sketch.redraw();

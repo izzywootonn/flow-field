@@ -9,7 +9,7 @@ import { computeCell } from './flowField.js';
 export function exportSVG(params, sources, maxStrength, showSources = true) {
   const {
     width, height, cols, rows,
-    lineLength, lineWeight, falloff, lengthByDist,
+    lineLength, lineWeight, falloff, lengthByDist, pull,
     colorBg, colorField, colorSource,
   } = params;
 
@@ -27,7 +27,7 @@ export function exportSVG(params, sources, maxStrength, showSources = true) {
       let len = lineLength;
 
       if (sources.length > 0) {
-        const { angle: a, strength } = computeCell(cx, cy, sources, falloff);
+        const { angle: a, strength } = computeCell(cx, cy, sources, falloff, pull);
         angle = a;
         const norm = Math.min(strength / maxStrength, 1);
         len = lineLength * (1 - lengthByDist + lengthByDist * norm);
