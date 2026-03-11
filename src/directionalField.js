@@ -15,7 +15,7 @@ import { closestPointOnSegment, sampleBezier } from './flowField.js';
  * @param {number} feather      Falloff exponent — higher = sharper drop-off (default 1.5)
  */
 export function computeDirectionalCell(cx, cy, sources, radius = 150, feather = 1.5) {
-  let sumX = 0, sumY = 0;
+  let sumX = 0, sumY = 0, totalW = 0;
 
   for (const src of sources) {
     if (src.type === 'point') {
@@ -24,6 +24,7 @@ export function computeDirectionalCell(cx, cy, sources, radius = 150, feather = 
       const w = Math.pow(Math.max(0, 1 - d / radius), feather);
       sumX += w * Math.cos(src.angle);
       sumY += w * Math.sin(src.angle);
+      totalW += w;
     } else {
       // Line source: iterate each segment
       for (let s = 0; s < src.points.length - 1; s++) {
@@ -39,6 +40,7 @@ export function computeDirectionalCell(cx, cy, sources, radius = 150, feather = 
           if (segLen < 1e-6) continue;
           sumX += w * (B.x - A.x) / segLen;
           sumY += w * (B.y - A.y) / segLen;
+          totalW += w;
         } else {
           // Bezier segment: sample and find closest point, use central-difference tangent
           const samples = sampleBezier(A.x, A.y, A.cp2.x, A.cp2.y, B.cp1.x, B.cp1.y, B.x, B.y, 24);
@@ -57,10 +59,16 @@ export function computeDirectionalCell(cx, cy, sources, radius = 150, feather = 
           if (dtLen < 1e-6) continue;
           sumX += w * dtx / dtLen;
           sumY += w * dty / dtLen;
+          totalW += w;
         }
       }
     }
   }
 
-  return Math.hypot(sumX, sumY) < 1e-6 ? 0 : Math.atan2(sumY, sumX);
+  if (totalW < 1e-6) return 0;                         // no influence → neutral (horizontal)
+  const nx = sumX / totalW, ny = sumY / totalW;        // weighted-average direction
+  const coverage = Math.min(totalW, 1);                // 0..1: how strongly this cell is influenced
+  const bx = coverage * nx + (1 - coverage);           // blend toward neutral (1, 0)
+  const by = coverage * ny;
+  return Math.hypot(bx, by) < 1e-6 ? 0 : Math.atan2(by, bx);
 }

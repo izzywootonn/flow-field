@@ -177,8 +177,8 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
     }
 
     function drawFieldLine(cx, cy, angle, len) {
-      const h = len / 2, cos = Math.cos(angle), sin = Math.sin(angle);
-      p.line(cx - cos*h, cy - sin*h, cx + cos*h, cy + sin*h);
+      const cos = Math.cos(angle), sin = Math.sin(angle);
+      p.line(cx, cy, cx + cos*len, cy + sin*len);
     }
 
     // ── Source rendering ────────────────────────────────────────────────────
