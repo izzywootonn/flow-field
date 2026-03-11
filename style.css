@@ -227,10 +227,19 @@ button#redoBtn:hover {
   color: #fff;
 }
 
+button#randomize,
+button#chaosBtn,
 button#exportSvg {
   border-color: var(--accent);
   background: transparent;
   color: var(--accent);
+}
+
+.export-section {
+  padding-top: 16px;
+  border-top: 1px solid var(--sidebar-border);
+  display: flex;
+  flex-direction: column;
 }
 
 button#clear {
