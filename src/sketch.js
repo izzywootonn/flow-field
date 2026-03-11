@@ -7,8 +7,9 @@ const CP_HIT_R     = 9;
 const LINE_HIT_R   = 7;
 
 // Off-canvas handle support
-const EDIT_TOLERANCE = 80;   // px beyond canvas edge still triggering edit mousePressed
-const EDGE_INSET     = 8;    // px inset from canvas edge where indicator arrows are drawn
+const EDIT_TOLERANCE   = 80;   // px beyond canvas edge still triggering edit mousePressed
+const EDGE_INSET       = 8;    // px inset from canvas edge where indicator arrows are drawn
+const DRAG_CANCEL_DIST = 120;  // px beyond canvas edge at which an active drag is cancelled
 
 // ── Vertex helpers ────────────────────────────────────────────────────────────
 
@@ -450,7 +451,17 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
         ? (p.mouseX >= -EDIT_TOLERANCE && p.mouseX <= p.width  + EDIT_TOLERANCE &&
            p.mouseY >= -EDIT_TOLERANCE && p.mouseY <= p.height + EDIT_TOLERANCE)
         : isOverCanvas();
-      if (!inBounds) return;
+      if (!inBounds) {
+        // Clicking outside the canvas while in edit mode exits edit cleanly,
+        // so sidebar slider clicks don't accidentally distort anchor points.
+        if (getMode() === 'edit') {
+          setMode(getReturnMode());
+          selectedIdx    = -1;
+          selectedHandle = null;
+          p.redraw();
+        }
+        return;
+      }
       mouseDownX  = p.mouseX;
       mouseDownY  = p.mouseY;
       dragStarted = false;
@@ -499,6 +510,25 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
         if (selectedIdx < 0) return;
         if (Math.hypot(p.mouseX - mouseDownX, p.mouseY - mouseDownY) > 3) editDragging = true;
         if (!editDragging) return;
+
+        // Safety net: cancel drag if mouse strays far past the canvas edge
+        // (e.g. accidentally dragging from canvas into sidebar in one motion)
+        if (p.mouseX < -DRAG_CANCEL_DIST || p.mouseX > p.width  + DRAG_CANCEL_DIST ||
+            p.mouseY < -DRAG_CANCEL_DIST || p.mouseY > p.height + DRAG_CANCEL_DIST) {
+          if (undoStack.length) {
+            const preDrag = undoStack.pop();
+            sources.length = 0;
+            preDrag.forEach(s => sources.push(s));
+            redoStack = [];
+          }
+          editDragging   = false;
+          selectedIdx    = -1;
+          selectedHandle = null;
+          invalidateCache();
+          setMode(getReturnMode());
+          p.redraw();
+          return;
+        }
 
         const src = sources[selectedIdx];
         const sh  = selectedHandle;
