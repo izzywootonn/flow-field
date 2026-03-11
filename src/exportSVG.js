@@ -49,12 +49,19 @@ export function exportSVG(params, sources, maxStrength) {
       sourceMarkers += `    <circle cx="${f(src.x)}" cy="${f(src.y)}" r="4" fill="none" stroke-width="1.5" />\n`;
       sourceMarkers += `    <circle cx="${f(src.x)}" cy="${f(src.y)}" r="1.5" />\n`;
     } else {
-      // Polyline: render each segment
+      // Build SVG path — L for corner-to-corner, C for bezier segments
+      const first = src.points[0];
+      let d = `M ${f(first.x)} ${f(first.y)}`;
       for (let s = 0; s < src.points.length - 1; s++) {
-        const a = src.points[s], b = src.points[s + 1];
-        sourceMarkers += `    <line x1="${f(a.x)}" y1="${f(a.y)}" x2="${f(b.x)}" y2="${f(b.y)}" stroke-width="2" />\n`;
+        const A = src.points[s], B = src.points[s + 1];
+        if (A.type === 'corner' && B.type === 'corner') {
+          d += ` L ${f(B.x)} ${f(B.y)}`;
+        } else {
+          d += ` C ${f(A.cp2.x)} ${f(A.cp2.y)} ${f(B.cp1.x)} ${f(B.cp1.y)} ${f(B.x)} ${f(B.y)}`;
+        }
       }
-      // All vertex dots
+      sourceMarkers += `    <path d="${d}" fill="none" stroke-width="2" />\n`;
+      // Vertex dots
       for (const pt of src.points) {
         sourceMarkers += `    <circle cx="${f(pt.x)}" cy="${f(pt.y)}" r="2.5" />\n`;
       }

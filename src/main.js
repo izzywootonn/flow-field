@@ -39,7 +39,7 @@ const hintEl = document.getElementById('hint');
 const HINTS = {
   point: 'Click to place a point source',
   line:  'Click and drag to draw a line source',
-  edit:  'Click to select · Drag to move · Delete to remove · Click line to add vertex',
+  edit:  'Click to select · Drag to move · Double-click vertex to toggle bezier · Delete to remove',
 };
 
 // ── Read params ───────────────────────────────────────────────────────────────
