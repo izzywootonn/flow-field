@@ -6,6 +6,10 @@ const HANDLE_HIT_R = 10;
 const CP_HIT_R     = 9;
 const LINE_HIT_R   = 7;
 
+// Off-canvas handle support
+const EDIT_TOLERANCE = 80;   // px beyond canvas edge still triggering edit mousePressed
+const EDGE_INSET     = 8;    // px inset from canvas edge where indicator arrows are drawn
+
 // ── Vertex helpers ────────────────────────────────────────────────────────────
 
 /** Create a corner vertex at (x, y). */
@@ -58,6 +62,21 @@ function splitBezierAt(A, B, t) {
   A.cp2 = Q1;
   B.cp1 = Q3;
   return { x: M.x, y: M.y, type: 'smooth', cp1: R1, cp2: R2 };
+}
+
+// ── Off-canvas edge helpers ───────────────────────────────────────────────────
+
+/**
+ * Returns the clamped canvas-edge position for an off-canvas point,
+ * plus whether it was actually off-canvas and the direction toward the real handle.
+ * Must be called inside p5's context where p.width / p.height are available.
+ */
+function makeEdgePin(pWidth, pHeight) {
+  return function edgePin(x, y) {
+    const ex = Math.max(EDGE_INSET, Math.min(pWidth  - EDGE_INSET, x));
+    const ey = Math.max(EDGE_INSET, Math.min(pHeight - EDGE_INSET, y));
+    return { ex, ey, offCanvas: ex !== x || ey !== y, dx: x - ex, dy: y - ey };
+  };
 }
 
 // ── Sketch factory ────────────────────────────────────────────────────────────
@@ -132,6 +151,7 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
       drawField(params);
       if (getShowSources()) drawSources(params);
       if (drawingLine) drawPreviewLine(drawingLine, params);
+      if (getMode() === 'edit') drawEdgeIndicators(params);
     };
 
     // ── Field rendering ─────────────────────────────────────────────────────
@@ -285,6 +305,50 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
       for (const pt of points) p.circle(pt.x, pt.y, 5);
     }
 
+    // ── Off-canvas edge indicators ──────────────────────────────────────────
+    function drawEdgeIndicators({ colorSource }) {
+      const edgePin = makeEdgePin(p.width, p.height);
+
+      function drawArrow(ex, ey, dx, dy, color, size = 8) {
+        const angle = Math.atan2(dy, dx);
+        p.push();
+        p.translate(ex, ey);
+        p.rotate(angle);
+        p.fill(color);
+        p.noStroke();
+        p.triangle(size + 1, 0, -size / 2, size / 2 + 1, -size / 2, -(size / 2 + 1));
+        p.pop();
+      }
+
+      for (let i = 0; i < sources.length; i++) {
+        const src = sources[i];
+        const isSelected = i === selectedIdx;
+        const color = isSelected ? '#ffffff' : colorSource;
+
+        if (src.type === 'point') {
+          const { ex, ey, offCanvas, dx, dy } = edgePin(src.x, src.y);
+          if (offCanvas) drawArrow(ex, ey, dx, dy, color);
+        } else {
+          for (let h = 0; h < src.points.length; h++) {
+            const v = src.points[h];
+            const vtxPin = edgePin(v.x, v.y);
+            if (vtxPin.offCanvas) drawArrow(vtxPin.ex, vtxPin.ey, vtxPin.dx, vtxPin.dy, color, 7);
+
+            if (v.type === 'smooth') {
+              if (h > 0) {
+                const cp1Pin = edgePin(v.cp1.x, v.cp1.y);
+                if (cp1Pin.offCanvas) drawArrow(cp1Pin.ex, cp1Pin.ey, cp1Pin.dx, cp1Pin.dy, color + '99', 5);
+              }
+              if (h < src.points.length - 1) {
+                const cp2Pin = edgePin(v.cp2.x, v.cp2.y);
+                if (cp2Pin.offCanvas) drawArrow(cp2Pin.ex, cp2Pin.ey, cp2Pin.dx, cp2Pin.dy, color + '99', 5);
+              }
+            }
+          }
+        }
+      }
+    }
+
     // ── Hit detection ───────────────────────────────────────────────────────
     function hitTestSources(mx, my) {
       // Priority 0: bezier control handles (cp1 / cp2)
@@ -338,6 +402,39 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
           }
         }
       }
+      // Priority 4: edge-pinned indicators for off-canvas handles
+      // Allows clicking the arrow indicator to select a handle beyond the canvas
+      {
+        const edgePin = makeEdgePin(p.width, p.height);
+        for (let i = sources.length - 1; i >= 0; i--) {
+          const src = sources[i];
+          if (src.type === 'point') {
+            const { ex, ey, offCanvas } = edgePin(src.x, src.y);
+            if (offCanvas && Math.hypot(mx - ex, my - ey) < POINT_HIT_R)
+              return { idx: i, handle: -1, segIdx: -1 };
+          } else {
+            for (let h = 0; h < src.points.length; h++) {
+              const v = src.points[h];
+              const vtxPin = edgePin(v.x, v.y);
+              if (vtxPin.offCanvas && Math.hypot(mx - vtxPin.ex, my - vtxPin.ey) < HANDLE_HIT_R)
+                return { idx: i, handle: { kind: 'vertex', h }, segIdx: -1 };
+              if (v.type === 'smooth') {
+                if (h > 0) {
+                  const cp1Pin = edgePin(v.cp1.x, v.cp1.y);
+                  if (cp1Pin.offCanvas && Math.hypot(mx - cp1Pin.ex, my - cp1Pin.ey) < CP_HIT_R)
+                    return { idx: i, handle: { kind: 'cp1', h }, segIdx: -1 };
+                }
+                if (h < src.points.length - 1) {
+                  const cp2Pin = edgePin(v.cp2.x, v.cp2.y);
+                  if (cp2Pin.offCanvas && Math.hypot(mx - cp2Pin.ex, my - cp2Pin.ey) < CP_HIT_R)
+                    return { idx: i, handle: { kind: 'cp2', h }, segIdx: -1 };
+                }
+              }
+            }
+          }
+        }
+      }
+
       return { idx: -1, handle: null, segIdx: -1 };
     }
 
@@ -348,7 +445,12 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
     }
 
     p.mousePressed = () => {
-      if (!isOverCanvas()) return;
+      // In edit mode allow grabbing handles slightly outside the canvas boundary
+      const inBounds = getMode() === 'edit'
+        ? (p.mouseX >= -EDIT_TOLERANCE && p.mouseX <= p.width  + EDIT_TOLERANCE &&
+           p.mouseY >= -EDIT_TOLERANCE && p.mouseY <= p.height + EDIT_TOLERANCE)
+        : isOverCanvas();
+      if (!inBounds) return;
       mouseDownX  = p.mouseX;
       mouseDownY  = p.mouseY;
       dragStarted = false;
