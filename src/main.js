@@ -122,7 +122,12 @@ document.getElementById('randomize').addEventListener('click', () => {
 });
 
 document.getElementById('exportSvg').addEventListener('click', () => {
-  exportSVG(getParams(), sketch.getSources(), sketch.getMaxStrength(), showSources);
+  exportSVG(getParams(), sketch.getSources(), sketch.getMaxStrength(), showSources, sketch.getChaosMode(), sketch.getChaosAngles());
+});
+
+document.getElementById('chaosBtn').addEventListener('click', () => {
+  sketch.toggleChaos();
+  document.getElementById('chaosBtn').classList.toggle('active', sketch.getChaosMode());
 });
 
 document.getElementById('toggleSources').addEventListener('click', () => {

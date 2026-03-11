@@ -6,7 +6,7 @@ import { computeCell } from './flowField.js';
  * @param {Array}  sources    Array of point/line sources
  * @param {number} maxStrength  Cached max strength for length normalisation
  */
-export function exportSVG(params, sources, maxStrength, showSources = true) {
+export function exportSVG(params, sources, maxStrength, showSources = true, chaosMode = false, chaosAngles = []) {
   const {
     width, height, cols, rows,
     lineLength, lineWeight, falloff, lengthByDist, pull,
@@ -26,7 +26,10 @@ export function exportSVG(params, sources, maxStrength, showSources = true) {
       let angle = 0;
       let len = lineLength;
 
-      if (sources.length > 0) {
+      if (chaosMode) {
+        angle = chaosAngles[col * rows + row] ?? 0;
+        len   = lineLength;
+      } else if (sources.length > 0) {
         const { angle: a, strength } = computeCell(cx, cy, sources, falloff, pull);
         angle = a;
         const norm = Math.min(strength / maxStrength, 1);

@@ -137,6 +137,12 @@ input[type="range"]::-moz-range-thumb {
   color: var(--accent);
 }
 
+/* Chaos button active state — solid fill to clearly signal "on" */
+#chaosBtn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
 /* Toggle button inside color-row — compact, no flex-stretch */
 #toggleSources {
   flex: none;
@@ -193,6 +199,7 @@ input[type="color"]::-webkit-color-swatch {
 }
 
 button#randomize,
+button#chaosBtn,
 button#exportSvg,
 button#undoBtn,
 button#redoBtn,
@@ -212,6 +219,7 @@ button#clear {
 }
 
 button#randomize:hover,
+button#chaosBtn:hover,
 button#exportSvg:hover,
 button#undoBtn:hover,
 button#redoBtn:hover {

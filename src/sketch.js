@@ -72,6 +72,14 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
     // ── State ───────────────────────────────────────────────────────────────
     let sources = [];
 
+    // ── Chaos mode ──────────────────────────────────────────────────────────
+    let chaosMode   = false;
+    let chaosAngles = [];   // flat [col * rows + row], length = cols × rows
+
+    function generateChaosAngles(cols, rows) {
+      chaosAngles = Array.from({ length: cols * rows }, () => Math.random() * Math.PI * 2);
+    }
+
     // ── Undo / Redo ─────────────────────────────────────────────────────────
     let undoStack = [];
     let redoStack = [];
@@ -132,6 +140,11 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
       const cellW = p.width / cols;
       const cellH = p.height / rows;
 
+      // Regenerate chaos angles if grid size changed while in chaos mode
+      if (chaosMode && chaosAngles.length !== cols * rows) {
+        generateChaosAngles(cols, rows);
+      }
+
       p.strokeWeight(lineWeight);
       p.stroke(colorField);
       p.noFill();
@@ -141,13 +154,19 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
           const cx = (col + 0.5) * cellW;
           const cy = (row + 0.5) * cellH;
 
-          if (sources.length === 0) {
-            drawFieldLine(cx, cy, 0, lineLength);
-            continue;
+          let angle, len;
+          if (chaosMode) {
+            angle = chaosAngles[col * rows + row];
+            len   = lineLength;
+          } else if (sources.length === 0) {
+            angle = 0;
+            len   = lineLength;
+          } else {
+            const { angle: a, strength } = computeCell(cx, cy, sources, falloff, pull);
+            angle = a;
+            const norm = Math.min(strength / cachedMaxStrength, 1);
+            len = lineLength * (1 - lengthByDist + lengthByDist * norm);
           }
-          const { angle, strength } = computeCell(cx, cy, sources, falloff, pull);
-          const norm = Math.min(strength / cachedMaxStrength, 1);
-          const len  = lineLength * (1 - lengthByDist + lengthByDist * norm);
           drawFieldLine(cx, cy, angle, len);
         }
       }
@@ -557,6 +576,17 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
       undoStack.push(JSON.parse(JSON.stringify(sources)));
       restoreState(redoStack.pop());
     };
+
+    p.toggleChaos    = () => {
+      chaosMode = !chaosMode;
+      if (chaosMode) {
+        const { cols, rows } = getParams();
+        generateChaosAngles(cols, rows);
+      }
+      p.redraw();
+    };
+    p.getChaosMode   = () => chaosMode;
+    p.getChaosAngles = () => chaosAngles;
 
     p.invalidateCache = invalidateCache;
     p.getSources      = () => sources;
