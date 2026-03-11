@@ -39,6 +39,7 @@ const hintEl = document.getElementById('hint');
 const HINTS = {
   point: 'Click to place a point source',
   line:  'Click and drag to draw a line source',
+  edit:  'Click to select · Drag to move · Delete to remove · Click line to add vertex',
 };
 
 // ── Read params ───────────────────────────────────────────────────────────────
@@ -88,19 +89,19 @@ for (const [key, input] of Object.entries(sliders)) {
 }
 
 // ── Mode buttons ──────────────────────────────────────────────────────────────
-document.getElementById('modePoint').addEventListener('click', () => {
-  currentMode = 'point';
-  document.getElementById('modePoint').classList.add('active');
-  document.getElementById('modeLine').classList.remove('active');
-  hintEl.textContent = HINTS.point;
-});
+const modeButtons = ['modePoint', 'modeLine', 'modeEdit'];
 
-document.getElementById('modeLine').addEventListener('click', () => {
-  currentMode = 'line';
-  document.getElementById('modeLine').classList.add('active');
-  document.getElementById('modePoint').classList.remove('active');
-  hintEl.textContent = HINTS.line;
-});
+function setMode(mode) {
+  currentMode = mode;
+  modeButtons.forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById(`mode${mode.charAt(0).toUpperCase() + mode.slice(1)}`).classList.add('active');
+  hintEl.textContent = HINTS[mode];
+  sketch.redraw();
+}
+
+document.getElementById('modePoint').addEventListener('click', () => setMode('point'));
+document.getElementById('modeLine').addEventListener('click',  () => setMode('line'));
+document.getElementById('modeEdit').addEventListener('click',  () => setMode('edit'));
 
 // ── Wire color pickers → redraw ───────────────────────────────────────────────
 for (const picker of Object.values(colorPickers)) {

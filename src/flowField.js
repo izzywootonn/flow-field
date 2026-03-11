@@ -20,7 +20,7 @@ export function closestPointOnSegment(cx, cy, x1, y1, x2, y2) {
  *
  * @param {number} cx
  * @param {number} cy
- * @param {Array} sources  Array of { type: 'point', x, y } or { type: 'line', x1, y1, x2, y2 }
+ * @param {Array} sources  Array of { type: 'point', x, y } or { type: 'line', points: [{x,y},...] }
  * @param {number} falloffExp  Exponent for inverse-distance weighting (higher = more local)
  * @returns {{ angle: number, strength: number }}
  */
@@ -29,32 +29,33 @@ export function computeCell(cx, cy, sources, falloffExp) {
   let sumY = 0;
 
   for (const src of sources) {
-    let ax, ay, d;
-
     if (src.type === 'point') {
-      ax = cx - src.x;
-      ay = cy - src.y;
-      d = Math.hypot(ax, ay);
+      const ax = cx - src.x;
+      const ay = cy - src.y;
+      const d = Math.hypot(ax, ay);
+      if (d < 0.5) continue;
+      const curlX = -ay / d;
+      const curlY =  ax / d;
+      const weight = 1 / (Math.pow(d, falloffExp) + 1e-6);
+      sumX += curlX * weight;
+      sumY += curlY * weight;
     } else {
-      // Line source: use closest point on segment as the effective anchor
-      const [px, py] = closestPointOnSegment(cx, cy, src.x1, src.y1, src.x2, src.y2);
-      ax = cx - px;
-      ay = cy - py;
-      d = Math.hypot(ax, ay);
+      // Polyline source: accumulate curl from every segment
+      for (let s = 0; s < src.points.length - 1; s++) {
+        const { x: ax1, y: ay1 } = src.points[s];
+        const { x: ax2, y: ay2 } = src.points[s + 1];
+        const [px, py] = closestPointOnSegment(cx, cy, ax1, ay1, ax2, ay2);
+        const ax = cx - px;
+        const ay = cy - py;
+        const d = Math.hypot(ax, ay);
+        if (d < 0.5) continue;
+        const curlX = -ay / d;
+        const curlY =  ax / d;
+        const weight = 1 / (Math.pow(d, falloffExp) + 1e-6);
+        sumX += curlX * weight;
+        sumY += curlY * weight;
+      }
     }
-
-    if (d < 0.5) continue; // skip cells that sit exactly on a source
-
-    // Curl vector: rotate the radial unit vector 90° counter-clockwise
-    // radial unit: (ax/d, ay/d) → perpendicular: (-ay/d, ax/d)
-    const curlX = -ay / d;
-    const curlY = ax / d;
-
-    // Inverse-distance weighting
-    const weight = 1 / (Math.pow(d, falloffExp) + 1e-6);
-
-    sumX += curlX * weight;
-    sumY += curlY * weight;
   }
 
   const angle = Math.atan2(sumY, sumX);

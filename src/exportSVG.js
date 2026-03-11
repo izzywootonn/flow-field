@@ -49,9 +49,15 @@ export function exportSVG(params, sources, maxStrength) {
       sourceMarkers += `    <circle cx="${f(src.x)}" cy="${f(src.y)}" r="4" fill="none" stroke-width="1.5" />\n`;
       sourceMarkers += `    <circle cx="${f(src.x)}" cy="${f(src.y)}" r="1.5" />\n`;
     } else {
-      sourceMarkers += `    <line x1="${f(src.x1)}" y1="${f(src.y1)}" x2="${f(src.x2)}" y2="${f(src.y2)}" stroke-width="2" />\n`;
-      sourceMarkers += `    <circle cx="${f(src.x1)}" cy="${f(src.y1)}" r="2.5" />\n`;
-      sourceMarkers += `    <circle cx="${f(src.x2)}" cy="${f(src.y2)}" r="2.5" />\n`;
+      // Polyline: render each segment
+      for (let s = 0; s < src.points.length - 1; s++) {
+        const a = src.points[s], b = src.points[s + 1];
+        sourceMarkers += `    <line x1="${f(a.x)}" y1="${f(a.y)}" x2="${f(b.x)}" y2="${f(b.y)}" stroke-width="2" />\n`;
+      }
+      // All vertex dots
+      for (const pt of src.points) {
+        sourceMarkers += `    <circle cx="${f(pt.x)}" cy="${f(pt.y)}" r="2.5" />\n`;
+      }
     }
   }
 

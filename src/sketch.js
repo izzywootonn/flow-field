@@ -1,26 +1,41 @@
-import { computeCell, computeMaxStrength } from './flowField.js';
+import { computeCell, computeMaxStrength, closestPointOnSegment } from './flowField.js';
+
+// Hit-detection radii (px)
+const POINT_HIT_R  = 14;
+const HANDLE_HIT_R = 10;
+const LINE_HIT_R   = 7;
 
 /**
  * Factory for a p5 instance-mode sketch.
  * @param {() => object} getParams  Returns current control values
- * @param {() => string} getMode    Returns 'point' | 'line'
+ * @param {() => string} getMode    Returns 'point' | 'line' | 'edit'
  */
 export default function makeSketch(getParams, getMode) {
   return (p) => {
+    // ── State ─────────────────────────────────────────────────────────────
     let sources = [];
-    let drawingLine = null; // { x1, y1, x2, y2 } while dragging
+
+    // Drawing state (point / line modes)
+    let drawingLine = null;   // { points: [{x,y},{x,y}] } while dragging
     let dragStarted = false;
     let mouseDownX = 0;
     let mouseDownY = 0;
 
-    // Cached max strength for normalization (recomputed when sources change)
+    // Edit mode state
+    let selectedIdx    = -1;    // index in sources[]
+    let selectedHandle = null;  // number (vertex idx) | 'body' | null
+    let selectedSegIdx = -1;    // segment index for body-click vertex insert
+    let editDragging   = false;
+    let hoverIdx       = -1;
+    let hoverHandle    = null;
+
+    // Cached max strength for length normalisation
     let cachedMaxStrength = 1;
 
     // ── Setup ─────────────────────────────────────────────────────────────
     p.setup = () => {
       const { width, height } = getParams();
-      const canvas = p.createCanvas(width, height);
-      canvas.parent('canvas-container');
+      p.createCanvas(width, height).parent('canvas-container');
       p.noLoop();
     };
 
@@ -52,15 +67,13 @@ export default function makeSketch(getParams, getMode) {
           const cy = (row + 0.5) * cellH;
 
           if (sources.length === 0) {
-            // Default: short horizontal ticks across the grid
             drawFieldLine(cx, cy, 0, lineLength);
             continue;
           }
 
           const { angle, strength } = computeCell(cx, cy, sources, falloff);
           const norm = Math.min(strength / cachedMaxStrength, 1);
-          // Blend between base length and distance-scaled length
-          const len = lineLength * (1 - lengthByDist + lengthByDist * norm);
+          const len  = lineLength * (1 - lengthByDist + lengthByDist * norm);
           drawFieldLine(cx, cy, angle, len);
         }
       }
@@ -70,87 +83,194 @@ export default function makeSketch(getParams, getMode) {
       const halfLen = len / 2;
       const cos = Math.cos(angle);
       const sin = Math.sin(angle);
-      p.line(
-        cx - cos * halfLen,
-        cy - sin * halfLen,
-        cx + cos * halfLen,
-        cy + sin * halfLen
-      );
+      p.line(cx - cos * halfLen, cy - sin * halfLen,
+             cx + cos * halfLen, cy + sin * halfLen);
     }
 
     // ── Source rendering ──────────────────────────────────────────────────
     function drawSources({ colorSource }) {
-      for (const src of sources) {
+      const inEdit = getMode() === 'edit';
+
+      for (let i = 0; i < sources.length; i++) {
+        const src       = sources[i];
+        const isSelected = inEdit && i === selectedIdx;
+        const isHovered  = inEdit && i === hoverIdx && !isSelected;
+        const c = isSelected ? '#ffffff'
+                : isHovered  ? colorSource + 'bb'
+                : colorSource;
+
+        p.stroke(c);
         p.noFill();
-        p.stroke(colorSource);
+
         if (src.type === 'point') {
-          p.strokeWeight(1.5);
-          p.circle(src.x, src.y, 8);
+          p.strokeWeight(isSelected ? 2.5 : 1.5);
+          p.circle(src.x, src.y, isSelected ? 14 : 8);
           p.strokeWeight(0.5);
           p.circle(src.x, src.y, 3);
         } else {
-          p.strokeWeight(2);
-          p.line(src.x1, src.y1, src.x2, src.y2);
-          // Endpoint dots
-          p.fill(colorSource);
+          // Polyline segments
+          p.strokeWeight(isSelected ? 2.5 : 2);
+          for (let s = 0; s < src.points.length - 1; s++) {
+            p.line(src.points[s].x, src.points[s].y,
+                   src.points[s + 1].x, src.points[s + 1].y);
+          }
+          // Endpoint dots (always)
+          p.fill(c);
           p.noStroke();
-          p.circle(src.x1, src.y1, 5);
-          p.circle(src.x2, src.y2, 5);
+          p.circle(src.points[0].x, src.points[0].y, 5);
+          p.circle(src.points[src.points.length - 1].x,
+                   src.points[src.points.length - 1].y, 5);
+
+          // Vertex handles in edit mode
+          if (inEdit) {
+            p.rectMode(p.CENTER);
+            for (let h = 0; h < src.points.length; h++) {
+              const isSelHandle = isSelected && h === selectedHandle;
+              p.stroke(isSelHandle ? '#ffffff' : c);
+              p.fill(isSelHandle ? '#ffffff' : 'transparent');
+              p.strokeWeight(isSelHandle ? 2 : 1);
+              p.rect(src.points[h].x, src.points[h].y, 8, 8);
+            }
+          }
         }
       }
     }
 
-    function drawPreviewLine({ x1, y1, x2, y2 }, { colorSource }) {
+    function drawPreviewLine({ points }, { colorSource }) {
       p.stroke(colorSource + '88');
       p.strokeWeight(1.5);
       p.drawingContext.setLineDash([4, 4]);
-      p.line(x1, y1, x2, y2);
+      p.line(points[0].x, points[0].y, points[1].x, points[1].y);
       p.drawingContext.setLineDash([]);
     }
 
-    // ── Mouse interaction ─────────────────────────────────────────────────
+    // ── Hit detection ─────────────────────────────────────────────────────
+    function hitTestSources(mx, my) {
+      // Priority 1: line vertex handles
+      for (let i = sources.length - 1; i >= 0; i--) {
+        const src = sources[i];
+        if (src.type !== 'line') continue;
+        for (let h = 0; h < src.points.length; h++) {
+          if (Math.hypot(mx - src.points[h].x, my - src.points[h].y) < HANDLE_HIT_R)
+            return { idx: i, handle: h, segIdx: -1 };
+        }
+      }
+      // Priority 2: point sources
+      for (let i = sources.length - 1; i >= 0; i--) {
+        const src = sources[i];
+        if (src.type === 'point' &&
+            Math.hypot(mx - src.x, my - src.y) < POINT_HIT_R)
+          return { idx: i, handle: -1, segIdx: -1 };
+      }
+      // Priority 3: line bodies
+      for (let i = sources.length - 1; i >= 0; i--) {
+        const src = sources[i];
+        if (src.type !== 'line') continue;
+        for (let s = 0; s < src.points.length - 1; s++) {
+          const [px, py] = closestPointOnSegment(
+            mx, my,
+            src.points[s].x, src.points[s].y,
+            src.points[s + 1].x, src.points[s + 1].y
+          );
+          if (Math.hypot(mx - px, my - py) < LINE_HIT_R)
+            return { idx: i, handle: 'body', segIdx: s };
+        }
+      }
+      return { idx: -1, handle: null, segIdx: -1 };
+    }
+
+    // ── Mouse events ──────────────────────────────────────────────────────
     function isOverCanvas() {
-      return p.mouseX >= 0 && p.mouseX <= p.width && p.mouseY >= 0 && p.mouseY <= p.height;
+      return p.mouseX >= 0 && p.mouseX <= p.width &&
+             p.mouseY >= 0 && p.mouseY <= p.height;
     }
 
     p.mousePressed = () => {
       if (!isOverCanvas()) return;
-      mouseDownX = p.mouseX;
-      mouseDownY = p.mouseY;
+      mouseDownX  = p.mouseX;
+      mouseDownY  = p.mouseY;
       dragStarted = false;
 
-      if (getMode() === 'line') {
-        drawingLine = { x1: p.mouseX, y1: p.mouseY, x2: p.mouseX, y2: p.mouseY };
+      const mode = getMode();
+
+      if (mode === 'edit') {
+        const hit = hitTestSources(p.mouseX, p.mouseY);
+        selectedIdx    = hit.idx;
+        selectedHandle = hit.handle;
+        selectedSegIdx = hit.segIdx;
+        editDragging   = false;
+        p.redraw();
+        return;
+      }
+
+      if (mode === 'line') {
+        drawingLine = { points: [{ x: p.mouseX, y: p.mouseY }, { x: p.mouseX, y: p.mouseY }] };
       }
     };
 
     p.mouseDragged = () => {
+      const mode = getMode();
+
+      if (mode === 'edit') {
+        if (selectedIdx < 0) return;
+        const dx = p.mouseX - mouseDownX;
+        const dy = p.mouseY - mouseDownY;
+        if (Math.hypot(dx, dy) > 3) editDragging = true;
+        if (!editDragging) return;
+
+        const src = sources[selectedIdx];
+        if (src.type === 'point') {
+          src.x = p.mouseX;
+          src.y = p.mouseY;
+        } else if (typeof selectedHandle === 'number' && selectedHandle >= 0) {
+          src.points[selectedHandle] = { x: p.mouseX, y: p.mouseY };
+        }
+        invalidateCache();
+        p.redraw();
+        return;
+      }
+
+      // Line drawing mode
       if (!isOverCanvas() && !drawingLine) return;
       const dx = p.mouseX - mouseDownX;
       const dy = p.mouseY - mouseDownY;
       if (Math.hypot(dx, dy) > 4) dragStarted = true;
 
-      if (getMode() === 'line' && drawingLine) {
-        drawingLine.x2 = p.mouseX;
-        drawingLine.y2 = p.mouseY;
+      if (mode === 'line' && drawingLine) {
+        drawingLine.points[1] = { x: p.mouseX, y: p.mouseY };
         p.redraw();
       }
     };
 
     p.mouseReleased = () => {
-      if (getMode() === 'point') {
-        if (!dragStarted && isOnCanvasAt(mouseDownX, mouseDownY)) {
+      const mode = getMode();
+
+      if (mode === 'edit') {
+        if (!editDragging && selectedIdx >= 0) {
+          const src = sources[selectedIdx];
+          // Click on line body → insert vertex at click position
+          if (src.type === 'line' && selectedHandle === 'body' && selectedSegIdx >= 0) {
+            src.points.splice(selectedSegIdx + 1, 0, { x: mouseDownX, y: mouseDownY });
+            invalidateCache();
+          }
+        }
+        editDragging = false;
+        p.redraw();
+        return;
+      }
+
+      if (mode === 'point') {
+        if (!dragStarted && isOverCanvas()) {
           sources.push({ type: 'point', x: mouseDownX, y: mouseDownY });
           invalidateCache();
           p.redraw();
         }
-      } else {
-        // Line mode
+      } else if (mode === 'line') {
         if (drawingLine) {
-          const dx = drawingLine.x2 - drawingLine.x1;
-          const dy = drawingLine.y2 - drawingLine.y1;
+          const dx = drawingLine.points[1].x - drawingLine.points[0].x;
+          const dy = drawingLine.points[1].y - drawingLine.points[0].y;
           if (Math.hypot(dx, dy) > 8) {
-            sources.push({ type: 'line', ...drawingLine });
+            sources.push({ type: 'line', points: [...drawingLine.points] });
             invalidateCache();
           }
           drawingLine = null;
@@ -160,9 +280,27 @@ export default function makeSketch(getParams, getMode) {
       dragStarted = false;
     };
 
-    function isOnCanvasAt(x, y) {
-      return x >= 0 && x <= p.width && y >= 0 && y <= p.height;
-    }
+    p.mouseMoved = () => {
+      if (getMode() !== 'edit') return;
+      const hit = hitTestSources(p.mouseX, p.mouseY);
+      if (hit.idx !== hoverIdx || hit.handle !== hoverHandle) {
+        hoverIdx    = hit.idx;
+        hoverHandle = hit.handle;
+        p.redraw();
+      }
+    };
+
+    p.keyPressed = () => {
+      if (getMode() === 'edit' && selectedIdx >= 0 &&
+          (p.key === 'Delete' || p.key === 'Backspace')) {
+        sources.splice(selectedIdx, 1);
+        selectedIdx    = -1;
+        selectedHandle = null;
+        invalidateCache();
+        p.redraw();
+        return false; // prevent browser back navigation on Backspace
+      }
+    };
 
     // ── Cache invalidation ────────────────────────────────────────────────
     function invalidateCache() {
@@ -170,31 +308,27 @@ export default function makeSketch(getParams, getMode) {
       cachedMaxStrength = computeMaxStrength(sources, falloff, p.width, p.height);
     }
 
-    // ── Public API (called from main.js) ──────────────────────────────────
+    // ── Public API ────────────────────────────────────────────────────────
     p.addRandomSources = (n = 8) => {
-      const w = p.width;
-      const h = p.height;
-      const margin = 40;
+      const w = p.width, h = p.height, margin = 40;
       for (let i = 0; i < n; i++) {
         if (Math.random() < 0.5) {
-          // Random point
           sources.push({
             type: 'point',
             x: margin + Math.random() * (w - margin * 2),
             y: margin + Math.random() * (h - margin * 2),
           });
         } else {
-          // Random line segment
-          const cx = margin + Math.random() * (w - margin * 2);
-          const cy = margin + Math.random() * (h - margin * 2);
+          const cx    = margin + Math.random() * (w - margin * 2);
+          const cy    = margin + Math.random() * (h - margin * 2);
           const angle = Math.random() * Math.PI * 2;
-          const len = 40 + Math.random() * 120;
+          const len   = 40 + Math.random() * 120;
           sources.push({
             type: 'line',
-            x1: cx - Math.cos(angle) * len / 2,
-            y1: cy - Math.sin(angle) * len / 2,
-            x2: cx + Math.cos(angle) * len / 2,
-            y2: cy + Math.sin(angle) * len / 2,
+            points: [
+              { x: cx - Math.cos(angle) * len / 2, y: cy - Math.sin(angle) * len / 2 },
+              { x: cx + Math.cos(angle) * len / 2, y: cy + Math.sin(angle) * len / 2 },
+            ],
           });
         }
       }
@@ -203,13 +337,15 @@ export default function makeSketch(getParams, getMode) {
     };
 
     p.clearSources = () => {
-      sources = [];
+      sources        = [];
+      selectedIdx    = -1;
+      selectedHandle = null;
       cachedMaxStrength = 1;
       p.redraw();
     };
 
-    p.invalidateCache = invalidateCache;
-    p.getSources = () => sources;
-    p.getMaxStrength = () => cachedMaxStrength;
+    p.invalidateCache  = invalidateCache;
+    p.getSources       = () => sources;
+    p.getMaxStrength   = () => cachedMaxStrength;
   };
 }
