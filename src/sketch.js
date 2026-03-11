@@ -87,7 +87,7 @@ function makeEdgePin(pWidth, pHeight) {
  * @param {() => string}  getMode        Returns 'point' | 'line' | 'edit'
  * @param {() => boolean} getShowSources Returns whether to render source markers
  */
-export default function makeSketch(getParams, getMode, getShowSources = () => true, setMode = () => {}, getReturnMode = () => 'point') {
+export default function makeSketch(getParams, getMode, getShowSources = () => true, setMode = () => {}, getReturnMode = () => 'point', isActive = () => true) {
   return (p) => {
     // ── State ───────────────────────────────────────────────────────────────
     let sources = [];
@@ -507,6 +507,7 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
     }
 
     p.mousePressed = () => {
+      if (!isActive()) return;
       // In edit mode allow grabbing handles slightly outside the canvas boundary
       const inBounds = getMode() === 'edit'
         ? (p.mouseX >= -EDIT_TOLERANCE && p.mouseX <= p.width  + EDIT_TOLERANCE &&
@@ -588,6 +589,7 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
     };
 
     p.mouseDragged = () => {
+      if (!isActive()) return;
       const mode = getMode();
 
       if (mode === 'edit') {
@@ -680,6 +682,7 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
     };
 
     p.mouseReleased = () => {
+      if (!isActive()) return;
       const mode = getMode();
 
       if (mode === 'edit') {
@@ -748,6 +751,7 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
     };
 
     p.doubleClicked = () => {
+      if (!isActive()) return;
       const mode = getMode();
 
       // ── Point / Line mode: double-click an existing source to enter edit ──
@@ -782,6 +786,7 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
     };
 
     p.mouseMoved = () => {
+      if (!isActive()) return;
       if (getMode() === 'line' && drawingLine) {
         previewPt = { x: p.mouseX, y: p.mouseY };
         p.redraw();
@@ -797,6 +802,7 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
     };
 
     p.keyPressed = () => {
+      if (!isActive()) return false;
       if (getMode() === 'edit' && p.key === 'Escape') {
         multiSelected.clear();
         groupDragOrigins = null;

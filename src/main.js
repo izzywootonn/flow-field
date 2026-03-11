@@ -109,12 +109,14 @@ syncDisplays();
 
 // ── p5 sketches ───────────────────────────────────────────────────────────────
 const sketch = new p5(
-  makeSketch(getParams, getMode, getShowSources, setMode, getReturnMode),
+  makeSketch(getParams, getMode, getShowSources, setMode, getReturnMode,
+    () => activeTab === 'magnetic'),
   document.getElementById('canvas-container')
 );
 
 const directionalSketch = new p5(
-  makeDirectionalSketch(getDirectionalParams, getMode, getShowSources, setMode, getReturnMode),
+  makeDirectionalSketch(getDirectionalParams, getMode, getShowSources, setMode, getReturnMode,
+    () => activeTab === 'directional'),
   document.getElementById('canvas-container-directional')
 );
 
@@ -125,6 +127,7 @@ function getActiveSketch() {
 // ── Tab switching ─────────────────────────────────────────────────────────────
 function switchTab(tab) {
   activeTab = tab;
+  prevMode  = 'point';  // reset so exiting edit on the new tab returns to point
 
   // Toggle canvas visibility
   document.getElementById('canvas-container').style.display =

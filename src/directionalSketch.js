@@ -91,7 +91,7 @@ function makeEdgePin(pWidth, pHeight) {
  * @param {() => string}  getMode        Returns 'point' | 'line' | 'edit'
  * @param {() => boolean} getShowSources Returns whether to render source markers
  */
-export default function makeDirectionalSketch(getParams, getMode, getShowSources = () => true, setMode = () => {}, getReturnMode = () => 'point') {
+export default function makeDirectionalSketch(getParams, getMode, getShowSources = () => true, setMode = () => {}, getReturnMode = () => 'point', isActive = () => true) {
   return (p) => {
     // ── State ───────────────────────────────────────────────────────────────
     let sources = [];
@@ -498,6 +498,7 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
     }
 
     p.mousePressed = () => {
+      if (!isActive()) return;
       const inBounds = getMode() === 'edit'
         ? (p.mouseX >= -EDIT_TOLERANCE && p.mouseX <= p.width  + EDIT_TOLERANCE &&
            p.mouseY >= -EDIT_TOLERANCE && p.mouseY <= p.height + EDIT_TOLERANCE)
@@ -571,6 +572,7 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
     };
 
     p.mouseDragged = () => {
+      if (!isActive()) return;
       const mode = getMode();
 
       if (mode === 'edit') {
@@ -660,6 +662,7 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
     };
 
     p.mouseReleased = () => {
+      if (!isActive()) return;
       const mode = getMode();
 
       if (mode === 'edit') {
@@ -723,6 +726,7 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
     };
 
     p.doubleClicked = () => {
+      if (!isActive()) return;
       const mode = getMode();
 
       if (mode === 'point' || mode === 'line') {
@@ -755,6 +759,7 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
     };
 
     p.mouseMoved = () => {
+      if (!isActive()) return;
       if (getMode() === 'line' && drawingLine) {
         previewPt = { x: p.mouseX, y: p.mouseY };
         p.redraw();
@@ -770,6 +775,7 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
     };
 
     p.keyPressed = () => {
+      if (!isActive()) return false;
       if (getMode() === 'edit' && p.key === 'Escape') {
         multiSelected.clear();
         groupDragOrigins = null;
