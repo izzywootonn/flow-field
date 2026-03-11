@@ -7,108 +7,139 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <aside id="sidebar">
-    <h1>Flow Field</h1>
 
-    <section class="control-group">
-      <h2>Canvas</h2>
-      <div class="control">
-        <label for="canvasWidth">Width <span id="canvasWidthVal">800</span></label>
-        <input type="range" id="canvasWidth" min="400" max="1400" step="10" value="800" />
-      </div>
-      <div class="control">
-        <label for="canvasHeight">Height <span id="canvasHeightVal">600</span></label>
-        <input type="range" id="canvasHeight" min="300" max="900" step="10" value="600" />
-      </div>
-    </section>
+  <div id="tab-bar">
+    <button id="tabMagnetic"    class="tab-btn active">Magnetic</button>
+    <button id="tabDirectional" class="tab-btn">Directional</button>
+  </div>
 
-    <section class="control-group">
-      <h2>Grid</h2>
-      <div class="control">
-        <label for="cols">Columns <span id="colsVal">40</span></label>
-        <input type="range" id="cols" min="5" max="120" step="1" value="40" />
-      </div>
-      <div class="control">
-        <label for="rows">Rows <span id="rowsVal">30</span></label>
-        <input type="range" id="rows" min="5" max="80" step="1" value="30" />
-      </div>
-    </section>
+  <div id="app-row">
 
-    <section class="control-group">
-      <h2>Lines</h2>
-      <div class="control">
-        <label for="lineLength">Length <span id="lineLengthVal">12</span></label>
-        <input type="range" id="lineLength" min="2" max="40" step="1" value="12" />
-      </div>
-      <div class="control">
-        <label for="lineWeight">Weight <span id="lineWeightVal">1.0</span></label>
-        <input type="range" id="lineWeight" min="0.5" max="6" step="0.5" value="1" />
-      </div>
-    </section>
+    <aside id="sidebar">
+      <h1>Flow Field</h1>
 
-    <section class="control-group">
-      <h2>Field</h2>
-      <div class="control">
-        <label for="falloff">Falloff <span id="falloffVal">1.5</span></label>
-        <input type="range" id="falloff" min="0.5" max="3" step="0.1" value="1.5" />
-      </div>
-      <div class="control">
-        <label for="lengthByDist">Dist. Length <span id="lengthByDistVal">0.5</span></label>
-        <input type="range" id="lengthByDist" min="0" max="1" step="0.05" value="0.5" />
-      </div>
-      <div class="control">
-        <label for="pull">Pull <span id="pullVal">50</span></label>
-        <input type="range" id="pull" min="0.1" max="100" step="0.1" value="50" />
-      </div>
-    </section>
+      <section class="control-group">
+        <h2>Canvas</h2>
+        <div class="control">
+          <label for="canvasWidth">Width <span id="canvasWidthVal">800</span></label>
+          <input type="range" id="canvasWidth" min="400" max="1400" step="10" value="800" />
+        </div>
+        <div class="control">
+          <label for="canvasHeight">Height <span id="canvasHeightVal">600</span></label>
+          <input type="range" id="canvasHeight" min="300" max="900" step="10" value="600" />
+        </div>
+      </section>
 
-    <section class="control-group">
-      <h2>Draw Mode</h2>
-      <div class="mode-toggle">
-        <button id="modePoint" class="mode-btn active">Point</button>
-        <button id="modeLine" class="mode-btn">Line</button>
-        <button id="modeEdit" class="mode-btn">Edit</button>
-      </div>
-      <p class="hint" id="hint">Click to place a point source</p>
-    </section>
+      <section class="control-group">
+        <h2>Grid</h2>
+        <div class="control">
+          <label for="cols">Columns <span id="colsVal">40</span></label>
+          <input type="range" id="cols" min="5" max="120" step="1" value="40" />
+        </div>
+        <div class="control">
+          <label for="rows">Rows <span id="rowsVal">30</span></label>
+          <input type="range" id="rows" min="5" max="80" step="1" value="30" />
+        </div>
+      </section>
 
-    <section class="control-group">
-      <h2>Colors</h2>
-      <div class="color-row">
-        <label for="colorBg">Background</label>
-        <input type="color" id="colorBg" value="#0d0d0f" />
-      </div>
-      <div class="color-row">
-        <label for="colorField">Field lines</label>
-        <input type="color" id="colorField" value="#bec3dc" />
-      </div>
-      <div class="color-row">
-        <label for="colorSource">Sources</label>
-        <input type="color" id="colorSource" value="#ff6e50" />
-      </div>
-      <div class="color-row">
-        <label>Sources visible</label>
-        <button id="toggleSources" class="mode-btn active">On</button>
-      </div>
-    </section>
+      <section class="control-group">
+        <h2>Lines</h2>
+        <div class="control">
+          <label for="lineLength">Length <span id="lineLengthVal">12</span></label>
+          <input type="range" id="lineLength" min="2" max="40" step="1" value="12" />
+        </div>
+        <div class="control">
+          <label for="lineWeight">Weight <span id="lineWeightVal">1.0</span></label>
+          <input type="range" id="lineWeight" min="0.5" max="6" step="0.5" value="1" />
+        </div>
+      </section>
 
-    <section class="control-group actions">
-      <button id="randomize">Randomize Sources</button>
-      <button id="chaosBtn">Scatter Field</button>
-      <div class="undo-redo">
-        <button id="undoBtn">Undo</button>
-        <button id="redoBtn">Redo</button>
+      <!-- Magnetic-only: Falloff / Dist. Length / Pull -->
+      <div id="magnetic-controls">
+        <section class="control-group">
+          <h2>Field</h2>
+          <div class="control">
+            <label for="falloff">Falloff <span id="falloffVal">1.5</span></label>
+            <input type="range" id="falloff" min="0.5" max="3" step="0.1" value="1.5" />
+          </div>
+          <div class="control">
+            <label for="lengthByDist">Dist. Length <span id="lengthByDistVal">0.5</span></label>
+            <input type="range" id="lengthByDist" min="0" max="1" step="0.05" value="0.5" />
+          </div>
+          <div class="control">
+            <label for="pull">Pull <span id="pullVal">50</span></label>
+            <input type="range" id="pull" min="0.1" max="100" step="0.1" value="50" />
+          </div>
+        </section>
       </div>
-      <button id="clear" class="secondary">Clear Sources</button>
-    </section>
 
-    <section class="export-section">
-      <button id="exportSvg">Export SVG</button>
-    </section>
+      <!-- Directional-only: Radius / Feather -->
+      <div id="directional-controls" style="display:none">
+        <section class="control-group">
+          <h2>Field</h2>
+          <div class="control">
+            <label for="radius">Radius <span id="radiusVal">150</span></label>
+            <input type="range" id="radius" min="20" max="600" step="1" value="150" />
+          </div>
+          <div class="control">
+            <label for="feather">Feather <span id="featherVal">1.50</span></label>
+            <input type="range" id="feather" min="0.3" max="4.0" step="0.1" value="1.5" />
+          </div>
+        </section>
+      </div>
 
-  </aside>
+      <section class="control-group">
+        <h2>Draw Mode</h2>
+        <div class="mode-toggle">
+          <button id="modePoint" class="mode-btn active">Point</button>
+          <button id="modeLine" class="mode-btn">Line</button>
+          <button id="modeEdit" class="mode-btn">Edit</button>
+        </div>
+        <p class="hint" id="hint">Click to place a point source</p>
+      </section>
 
-  <main id="canvas-container"></main>
+      <section class="control-group">
+        <h2>Colors</h2>
+        <div class="color-row">
+          <label for="colorBg">Background</label>
+          <input type="color" id="colorBg" value="#0d0d0f" />
+        </div>
+        <div class="color-row">
+          <label for="colorField">Field lines</label>
+          <input type="color" id="colorField" value="#bec3dc" />
+        </div>
+        <div class="color-row">
+          <label for="colorSource">Sources</label>
+          <input type="color" id="colorSource" value="#ff6e50" />
+        </div>
+        <div class="color-row">
+          <label>Sources visible</label>
+          <button id="toggleSources" class="mode-btn active">On</button>
+        </div>
+      </section>
+
+      <section class="control-group actions">
+        <button id="randomize">Randomize Sources</button>
+        <div id="magnetic-actions"><button id="chaosBtn">Scatter Field</button></div>
+        <div class="undo-redo">
+          <button id="undoBtn">Undo</button>
+          <button id="redoBtn">Redo</button>
+        </div>
+        <button id="clear" class="secondary">Clear Sources</button>
+      </section>
+
+      <div id="magnetic-export">
+        <section class="export-section">
+          <button id="exportSvg">Export SVG</button>
+        </section>
+      </div>
+
+    </aside>
+
+    <main id="canvas-container"></main>
+    <main id="canvas-container-directional" style="display:none"></main>
+
+  </div>
 
   <script type="module" src="src/main.js"></script>
 </body>

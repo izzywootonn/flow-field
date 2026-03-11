@@ -26,7 +26,54 @@ html, body {
 
 body {
   display: flex;
+  flex-direction: column;
   height: 100vh;
+  overflow: hidden;
+}
+
+/* Tab bar */
+#tab-bar {
+  display: flex;
+  flex-shrink: 0;
+  height: 36px;
+  background: var(--sidebar-bg);
+  border-bottom: 1px solid var(--sidebar-border);
+  padding: 0 16px;
+  align-items: flex-end;
+}
+
+.tab-btn {
+  padding: 6px 18px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  position: relative;
+  top: 1px;
+  transition: color 0.15s;
+}
+
+.tab-btn:hover { color: var(--text); }
+
+.tab-btn.active {
+  background: var(--bg);
+  border-color: var(--sidebar-border);
+  border-bottom-color: var(--bg);
+  color: var(--accent);
+}
+
+/* App row: sidebar + canvas side-by-side, fills remaining height */
+#app-row {
+  display: flex;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -260,8 +307,9 @@ button#clear:hover {
   margin-top: 8px;
 }
 
-/* Canvas container */
-#canvas-container {
+/* Canvas containers */
+#canvas-container,
+#canvas-container-directional {
   flex: 1;
   display: flex;
   align-items: center;
@@ -270,7 +318,8 @@ button#clear:hover {
   background: var(--bg);
 }
 
-#canvas-container canvas {
+#canvas-container canvas,
+#canvas-container-directional canvas {
   display: block;
   cursor: crosshair;
 }
@@ -278,9 +327,12 @@ button#clear:hover {
 /* Responsive: sidebar goes to top on narrow screens */
 @media (max-width: 700px) {
   body {
-    flex-direction: column;
     height: auto;
     overflow: auto;
+  }
+
+  #app-row {
+    flex-direction: column;
   }
 
   #sidebar {
@@ -303,7 +355,8 @@ button#clear:hover {
     min-width: 140px;
   }
 
-  #canvas-container {
+  #canvas-container,
+  #canvas-container-directional {
     min-height: 400px;
   }
 }

@@ -1,5 +1,6 @@
 import p5 from 'p5';
 import makeSketch from './sketch.js';
+import makeDirectionalSketch from './directionalSketch.js';
 import { exportSVG } from './exportSVG.js';
 
 // ── Color picker references ───────────────────────────────────────────────────
@@ -9,8 +10,9 @@ const colorPickers = {
   colorSource: document.getElementById('colorSource'),
 };
 
-// ── Control references ────────────────────────────────────────────────────────
-const sliders = {
+// ── Slider references ─────────────────────────────────────────────────────────
+// Shared sliders are in magneticSliders but drive both sketches on change.
+const magneticSliders = {
   canvasWidth:  document.getElementById('canvasWidth'),
   canvasHeight: document.getElementById('canvasHeight'),
   cols:         document.getElementById('cols'),
@@ -22,6 +24,14 @@ const sliders = {
   pull:         document.getElementById('pull'),
 };
 
+const directionalSliders = {
+  radius:  document.getElementById('radius'),
+  feather: document.getElementById('feather'),
+};
+
+// Magnetic-only slider keys (do NOT redraw directional sketch)
+const magneticOnlyKeys = new Set(['falloff', 'lengthByDist', 'pull']);
+
 const displays = {
   canvasWidth:  document.getElementById('canvasWidthVal'),
   canvasHeight: document.getElementById('canvasHeightVal'),
@@ -32,12 +42,16 @@ const displays = {
   falloff:      document.getElementById('falloffVal'),
   lengthByDist: document.getElementById('lengthByDistVal'),
   pull:         document.getElementById('pullVal'),
+  radius:       document.getElementById('radiusVal'),
+  feather:      document.getElementById('featherVal'),
 };
 
-// ── Mode state ────────────────────────────────────────────────────────────────
+// ── Mode / tab state ──────────────────────────────────────────────────────────
 let currentMode  = 'point';
 let prevMode     = 'point';   // last non-edit mode; restored when exiting edit
 let showSources  = true;
+let activeTab    = 'magnetic';
+
 const hintEl = document.getElementById('hint');
 
 const HINTS = {
@@ -47,34 +61,45 @@ const HINTS = {
 };
 
 // ── Read params ───────────────────────────────────────────────────────────────
-function getParams() {
+function getSharedParams() {
   return {
-    width:        parseInt(sliders.canvasWidth.value),
-    height:       parseInt(sliders.canvasHeight.value),
-    cols:         parseInt(sliders.cols.value),
-    rows:         parseInt(sliders.rows.value),
-    lineLength:   parseInt(sliders.lineLength.value),
-    lineWeight:   parseFloat(sliders.lineWeight.value),
-    falloff:      parseFloat(sliders.falloff.value),
-    lengthByDist: parseFloat(sliders.lengthByDist.value),
-    pull:         parseFloat(sliders.pull.value),
-    colorBg:      colorPickers.colorBg.value,
-    colorField:   colorPickers.colorField.value,
-    colorSource:  colorPickers.colorSource.value,
+    width:       parseInt(magneticSliders.canvasWidth.value),
+    height:      parseInt(magneticSliders.canvasHeight.value),
+    cols:        parseInt(magneticSliders.cols.value),
+    rows:        parseInt(magneticSliders.rows.value),
+    lineLength:  parseInt(magneticSliders.lineLength.value),
+    lineWeight:  parseFloat(magneticSliders.lineWeight.value),
+    colorBg:     colorPickers.colorBg.value,
+    colorField:  colorPickers.colorField.value,
+    colorSource: colorPickers.colorSource.value,
   };
 }
 
-function getMode() {
-  return currentMode;
+function getParams() {
+  return {
+    ...getSharedParams(),
+    falloff:      parseFloat(magneticSliders.falloff.value),
+    lengthByDist: parseFloat(magneticSliders.lengthByDist.value),
+    pull:         parseFloat(magneticSliders.pull.value),
+  };
 }
 
-function getShowSources() {
-  return showSources;
+function getDirectionalParams() {
+  return {
+    ...getSharedParams(),
+    radius:  parseFloat(directionalSliders.radius.value),
+    feather: parseFloat(directionalSliders.feather.value),
+  };
 }
+
+function getMode()        { return currentMode; }
+function getShowSources() { return showSources; }
 
 // ── Update display values ─────────────────────────────────────────────────────
 function syncDisplays() {
-  for (const [key, input] of Object.entries(sliders)) {
+  const allSliders = { ...magneticSliders, ...directionalSliders };
+  for (const [key, input] of Object.entries(allSliders)) {
+    if (!input || !displays[key]) continue;
     const val = parseFloat(input.value);
     displays[key].textContent = Number.isInteger(val) ? val : val.toFixed(2);
   }
@@ -82,25 +107,85 @@ function syncDisplays() {
 
 syncDisplays();
 
-// ── p5 sketch ─────────────────────────────────────────────────────────────────
-const sketch = new p5(makeSketch(getParams, getMode, getShowSources, setMode, getReturnMode), document.getElementById('canvas-container'));
+// ── p5 sketches ───────────────────────────────────────────────────────────────
+const sketch = new p5(
+  makeSketch(getParams, getMode, getShowSources, setMode, getReturnMode),
+  document.getElementById('canvas-container')
+);
+
+const directionalSketch = new p5(
+  makeDirectionalSketch(getDirectionalParams, getMode, getShowSources, setMode, getReturnMode),
+  document.getElementById('canvas-container-directional')
+);
+
+function getActiveSketch() {
+  return activeTab === 'magnetic' ? sketch : directionalSketch;
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  activeTab = tab;
+
+  // Toggle canvas visibility
+  document.getElementById('canvas-container').style.display =
+    tab === 'magnetic' ? '' : 'none';
+  document.getElementById('canvas-container-directional').style.display =
+    tab === 'directional' ? '' : 'none';
+
+  // Toggle sidebar section visibility
+  const magneticControls    = document.getElementById('magnetic-controls');
+  const directionalControls = document.getElementById('directional-controls');
+  const magneticActions     = document.getElementById('magnetic-actions');
+  const magneticExport      = document.getElementById('magnetic-export');
+
+  if (magneticControls)    magneticControls.style.display    = tab === 'magnetic'    ? '' : 'none';
+  if (directionalControls) directionalControls.style.display = tab === 'directional' ? '' : 'none';
+  if (magneticActions)     magneticActions.style.display     = tab === 'magnetic'    ? '' : 'none';
+  if (magneticExport)      magneticExport.style.display      = tab === 'magnetic'    ? '' : 'none';
+
+  // Update tab button active states
+  document.getElementById('tabMagnetic').classList.toggle('active',    tab === 'magnetic');
+  document.getElementById('tabDirectional').classList.toggle('active', tab === 'directional');
+
+  // Cancel any active line drawing and reset to point mode
+  getActiveSketch().cancelDrawingLine();
+  setMode('point');
+}
+
+document.getElementById('tabMagnetic').addEventListener('click',    () => switchTab('magnetic'));
+document.getElementById('tabDirectional').addEventListener('click', () => switchTab('directional'));
 
 // ── Wire sliders → redraw ─────────────────────────────────────────────────────
-for (const [key, input] of Object.entries(sliders)) {
+// Magnetic sliders: shared sliders redraw both; magnetic-only sliders redraw only magnetic
+for (const [key, input] of Object.entries(magneticSliders)) {
+  if (!input) continue;
+  const isMagneticOnly = magneticOnlyKeys.has(key);
   input.addEventListener('input', () => {
     syncDisplays();
-    // Falloff and pull changes affect cached max strength
-    if (key === 'falloff' || key === 'pull') {
-      sketch.invalidateCache();
-    }
+    if (key === 'falloff' || key === 'pull') sketch.invalidateCache();
     sketch.redraw();
+    if (!isMagneticOnly) directionalSketch.redraw();
   });
-  // Double-click any slider to reset it to its HTML default value
   input.addEventListener('dblclick', () => {
     input.value = input.defaultValue;
     syncDisplays();
     if (key === 'falloff' || key === 'pull') sketch.invalidateCache();
     sketch.redraw();
+    if (!isMagneticOnly) directionalSketch.redraw();
+  });
+}
+
+// Directional-only sliders: redraw only directional sketch
+for (const [key, input] of Object.entries(directionalSliders)) {
+  if (!input) continue;
+  input.addEventListener('input', () => {
+    syncDisplays();
+    directionalSketch.redraw();
+  });
+  input.addEventListener('dblclick', () => {
+    input.value = input.defaultValue;
+    syncDisplays();
+    directionalSketch.redraw();
   });
 }
 
@@ -114,22 +199,26 @@ function setMode(mode) {
   document.getElementById(`mode${mode.charAt(0).toUpperCase() + mode.slice(1)}`).classList.add('active');
   hintEl.textContent = HINTS[mode];
   sketch.redraw();
+  directionalSketch.redraw();
 }
 
 function getReturnMode() { return prevMode; }
 
-document.getElementById('modePoint').addEventListener('click', () => { sketch.cancelDrawingLine(); setMode('point'); });
-document.getElementById('modeLine').addEventListener('click',  () => { sketch.cancelDrawingLine(); setMode('line');  });
-document.getElementById('modeEdit').addEventListener('click',  () => { sketch.cancelDrawingLine(); setMode('edit');  });
+document.getElementById('modePoint').addEventListener('click', () => { getActiveSketch().cancelDrawingLine(); setMode('point'); });
+document.getElementById('modeLine').addEventListener('click',  () => { getActiveSketch().cancelDrawingLine(); setMode('line');  });
+document.getElementById('modeEdit').addEventListener('click',  () => { getActiveSketch().cancelDrawingLine(); setMode('edit');  });
 
 // ── Wire color pickers → redraw ───────────────────────────────────────────────
 for (const picker of Object.values(colorPickers)) {
-  picker.addEventListener('input', () => sketch.redraw());
+  picker.addEventListener('input', () => {
+    sketch.redraw();
+    directionalSketch.redraw();
+  });
 }
 
 // ── Action buttons ────────────────────────────────────────────────────────────
 document.getElementById('randomize').addEventListener('click', () => {
-  sketch.addRandomSources(8);
+  getActiveSketch().addRandomSources(8);
 });
 
 document.getElementById('exportSvg').addEventListener('click', () => {
@@ -147,23 +236,24 @@ document.getElementById('toggleSources').addEventListener('click', () => {
   btn.textContent = showSources ? 'On' : 'Off';
   btn.classList.toggle('active', showSources);
   sketch.redraw();
+  directionalSketch.redraw();
 });
 
 document.getElementById('clear').addEventListener('click', () => {
-  sketch.clearSources();
+  getActiveSketch().clearSources();
 });
 
-document.getElementById('undoBtn').addEventListener('click', () => sketch.undo());
-document.getElementById('redoBtn').addEventListener('click', () => sketch.redo());
+document.getElementById('undoBtn').addEventListener('click', () => getActiveSketch().undo());
+document.getElementById('redoBtn').addEventListener('click', () => getActiveSketch().redo());
 
 // ── Undo / Redo keyboard shortcuts ────────────────────────────────────────────
 document.addEventListener('keydown', (e) => {
   if (e.metaKey && !e.shiftKey && e.key === 'z') {
     e.preventDefault();
-    sketch.undo();
+    getActiveSketch().undo();
   }
   if ((e.metaKey && e.shiftKey && e.key === 'z') || (e.metaKey && e.key === 'y')) {
     e.preventDefault();
-    sketch.redo();
+    getActiveSketch().redo();
   }
 });
