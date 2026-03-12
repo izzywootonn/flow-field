@@ -227,12 +227,31 @@ document.getElementById('randomize').addEventListener('click', () => {
   getActiveSketch().addRandomSources(8);
 });
 
+function downloadCanvasPng(canvas, filename) {
+  canvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement('a');
+    a.href     = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, 'image/png');
+}
+
 document.getElementById('exportSvg').addEventListener('click', () => {
   exportSVG(getParams(), sketch.getSources(), sketch.getMaxStrength(), showSources, sketch.getChaosMode(), sketch.getChaosAngles());
 });
 
+document.getElementById('exportMagneticPng').addEventListener('click', () => {
+  downloadCanvasPng(sketch.getCanvas(), 'flow-field.png');
+});
+
 document.getElementById('exportDirectionalSvg').addEventListener('click', () => {
   exportDirectionalSVG(getDirectionalParams(), directionalSketch.getSources(), showSources);
+});
+
+document.getElementById('exportDirectionalPng').addEventListener('click', () => {
+  downloadCanvasPng(directionalSketch.getCanvas(), 'flow-field-directional.png');
 });
 
 document.getElementById('chaosBtn').addEventListener('click', () => {

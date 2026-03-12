@@ -940,5 +940,6 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
     };
 
     p.getSources = () => sources;
+    p.getCanvas  = () => p.canvas;
   };
 }

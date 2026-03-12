@@ -993,5 +993,6 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
     p.invalidateCache = invalidateCache;
     p.getSources      = () => sources;
     p.getMaxStrength  = () => cachedMaxStrength;
+    p.getCanvas       = () => p.canvas;
   };
 }
