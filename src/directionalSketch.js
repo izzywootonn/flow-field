@@ -288,6 +288,24 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
                   p.noFill(); p.strokeWeight(1);
                 }
               }
+
+              // Endpoint handle for corner first/last vertex when adjacent segment is bezier
+              if (v.type !== 'smooth') {
+                const n    = src.points.length;
+                const isEp0 = h === 0     && n > 1 && src.points[1].type    === 'smooth';
+                const isEpN = h === n - 1 && n > 1 && src.points[h - 1].type === 'smooth';
+                if (isEp0 || isEpN) {
+                  const cp   = isEp0 ? v.cp2 : v.cp1;
+                  const kind = isEp0 ? 'cp2' : 'cp1';
+                  p.strokeWeight(0.5); p.stroke(c + '77'); p.noFill();
+                  p.line(v.x, v.y, cp.x, cp.y);
+                  p.strokeWeight(1); p.stroke(c); p.noFill();
+                  const isSel = isSelected && selectedHandle?.kind === kind && selectedHandle.h === h;
+                  if (isSel) { p.fill('#ffffff'); p.strokeWeight(2); }
+                  p.circle(cp.x, cp.y, 7);
+                  p.noFill(); p.strokeWeight(1);
+                }
+              }
             }
           }
         }
@@ -350,6 +368,16 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
                 const cp2Pin = edgePin(v.cp2.x, v.cp2.y);
                 if (cp2Pin.offCanvas) drawArrow(cp2Pin.ex, cp2Pin.ey, cp2Pin.dx, cp2Pin.dy, color + '99', 5);
               }
+            } else {
+              const n = src.points.length;
+              if (h === 0 && n > 1 && src.points[1].type === 'smooth') {
+                const cp2Pin = edgePin(v.cp2.x, v.cp2.y);
+                if (cp2Pin.offCanvas) drawArrow(cp2Pin.ex, cp2Pin.ey, cp2Pin.dx, cp2Pin.dy, color + '99', 5);
+              }
+              if (h === n - 1 && n > 1 && src.points[h - 1].type === 'smooth') {
+                const cp1Pin = edgePin(v.cp1.x, v.cp1.y);
+                if (cp1Pin.offCanvas) drawArrow(cp1Pin.ex, cp1Pin.ey, cp1Pin.dx, cp1Pin.dy, color + '99', 5);
+              }
             }
           }
         }
@@ -388,11 +416,20 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
         if (src.type !== 'line') continue;
         for (let h = 0; h < src.points.length; h++) {
           const v = src.points[h];
-          if (v.type !== 'smooth') continue;
-          if (h > 0 && Math.hypot(mx - v.cp1.x, my - v.cp1.y) < CP_HIT_R)
-            return { idx: i, handle: { kind: 'cp1', h }, segIdx: -1 };
-          if (h < src.points.length - 1 && Math.hypot(mx - v.cp2.x, my - v.cp2.y) < CP_HIT_R)
-            return { idx: i, handle: { kind: 'cp2', h }, segIdx: -1 };
+          const n = src.points.length;
+          if (v.type === 'smooth') {
+            if (h > 0 && Math.hypot(mx - v.cp1.x, my - v.cp1.y) < CP_HIT_R)
+              return { idx: i, handle: { kind: 'cp1', h }, segIdx: -1 };
+            if (h < n - 1 && Math.hypot(mx - v.cp2.x, my - v.cp2.y) < CP_HIT_R)
+              return { idx: i, handle: { kind: 'cp2', h }, segIdx: -1 };
+          } else {
+            if (h === 0 && n > 1 && src.points[1].type === 'smooth' &&
+                Math.hypot(mx - v.cp2.x, my - v.cp2.y) < CP_HIT_R)
+              return { idx: i, handle: { kind: 'cp2', h }, segIdx: -1 };
+            if (h === n - 1 && n > 1 && src.points[h - 1].type === 'smooth' &&
+                Math.hypot(mx - v.cp1.x, my - v.cp1.y) < CP_HIT_R)
+              return { idx: i, handle: { kind: 'cp1', h }, segIdx: -1 };
+          }
         }
       }
       // Priority 2: vertex squares
@@ -458,6 +495,18 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
                   const cp2Pin = edgePin(v.cp2.x, v.cp2.y);
                   if (cp2Pin.offCanvas && Math.hypot(mx - cp2Pin.ex, my - cp2Pin.ey) < CP_HIT_R)
                     return { idx: i, handle: { kind: 'cp2', h }, segIdx: -1 };
+                }
+              } else {
+                const n = src.points.length;
+                if (h === 0 && n > 1 && src.points[1].type === 'smooth') {
+                  const cp2Pin = edgePin(v.cp2.x, v.cp2.y);
+                  if (cp2Pin.offCanvas && Math.hypot(mx - cp2Pin.ex, my - cp2Pin.ey) < CP_HIT_R)
+                    return { idx: i, handle: { kind: 'cp2', h }, segIdx: -1 };
+                }
+                if (h === n - 1 && n > 1 && src.points[h - 1].type === 'smooth') {
+                  const cp1Pin = edgePin(v.cp1.x, v.cp1.y);
+                  if (cp1Pin.offCanvas && Math.hypot(mx - cp1Pin.ex, my - cp1Pin.ey) < CP_HIT_R)
+                    return { idx: i, handle: { kind: 'cp1', h }, segIdx: -1 };
                 }
               }
             }
@@ -646,11 +695,11 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
         } else if (sh?.kind === 'cp1') {
           const v = src.points[sh.h];
           v.cp1 = { x: p.mouseX, y: p.mouseY };
-          v.cp2 = { x: 2*v.x - p.mouseX, y: 2*v.y - p.mouseY };
+          if (v.type === 'smooth') v.cp2 = { x: 2*v.x - p.mouseX, y: 2*v.y - p.mouseY };
         } else if (sh?.kind === 'cp2') {
           const v = src.points[sh.h];
           v.cp2 = { x: p.mouseX, y: p.mouseY };
-          v.cp1 = { x: 2*v.x - p.mouseX, y: 2*v.y - p.mouseY };
+          if (v.type === 'smooth') v.cp1 = { x: 2*v.x - p.mouseX, y: 2*v.y - p.mouseY };
         }
 
         p.redraw();
@@ -836,7 +885,7 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
       saveState();
       const w = p.width, h = p.height, margin = 40;
       for (let i = 0; i < n; i++) {
-        if (Math.random() < 0.5) {
+        if (Math.random() < 0.3) {
           sources.push({
             type: 'point',
             x: margin + Math.random() * (w - margin*2),
@@ -848,13 +897,15 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
           const cy    = margin + Math.random() * (h - margin*2);
           const angle = Math.random() * Math.PI * 2;
           const len   = 40 + Math.random() * 120;
-          sources.push({
-            type: 'line',
-            points: [
-              makeVertex(cx - Math.cos(angle)*len/2, cy - Math.sin(angle)*len/2),
-              makeVertex(cx + Math.cos(angle)*len/2, cy + Math.sin(angle)*len/2),
-            ],
-          });
+          const perp  = angle + Math.PI / 2;
+          const bulge = (Math.random() - 0.5) * len * 0.6;
+          const pts = [
+            makeVertex(cx - Math.cos(angle)*len/2, cy - Math.sin(angle)*len/2),
+            makeVertex(cx + Math.cos(perp)*bulge,  cy + Math.sin(perp)*bulge),
+            makeVertex(cx + Math.cos(angle)*len/2, cy + Math.sin(angle)*len/2),
+          ];
+          autoTangent(pts, 1);
+          sources.push({ type: 'line', points: pts });
         }
       }
       p.redraw();

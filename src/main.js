@@ -2,6 +2,7 @@ import p5 from 'p5';
 import makeSketch from './sketch.js';
 import makeDirectionalSketch from './directionalSketch.js';
 import { exportSVG } from './exportSVG.js';
+import { exportDirectionalSVG } from './exportDirectionalSVG.js';
 
 // ── Color picker references ───────────────────────────────────────────────────
 const colorPickers = {
@@ -140,11 +141,13 @@ function switchTab(tab) {
   const directionalControls = document.getElementById('directional-controls');
   const magneticActions     = document.getElementById('magnetic-actions');
   const magneticExport      = document.getElementById('magnetic-export');
+  const directionalExport   = document.getElementById('directional-export');
 
   if (magneticControls)    magneticControls.style.display    = tab === 'magnetic'    ? '' : 'none';
   if (directionalControls) directionalControls.style.display = tab === 'directional' ? '' : 'none';
   if (magneticActions)     magneticActions.style.display     = tab === 'magnetic'    ? '' : 'none';
   if (magneticExport)      magneticExport.style.display      = tab === 'magnetic'    ? '' : 'none';
+  if (directionalExport)   directionalExport.style.display   = tab === 'directional' ? '' : 'none';
 
   // Update tab button active states
   document.getElementById('tabMagnetic').classList.toggle('active',    tab === 'magnetic');
@@ -226,6 +229,10 @@ document.getElementById('randomize').addEventListener('click', () => {
 
 document.getElementById('exportSvg').addEventListener('click', () => {
   exportSVG(getParams(), sketch.getSources(), sketch.getMaxStrength(), showSources, sketch.getChaosMode(), sketch.getChaosAngles());
+});
+
+document.getElementById('exportDirectionalSvg').addEventListener('click', () => {
+  exportDirectionalSVG(getDirectionalParams(), directionalSketch.getSources(), showSources);
 });
 
 document.getElementById('chaosBtn').addEventListener('click', () => {
