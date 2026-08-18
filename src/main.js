@@ -128,7 +128,12 @@ function getActiveSketch() {
 // ── Tab switching ─────────────────────────────────────────────────────────────
 function switchTab(tab) {
   activeTab = tab;
-  prevMode  = 'point';  // reset so exiting edit on the new tab returns to point
+
+  // Point sources have no effect on the directional field — hide the button
+  // and default to line mode when on that tab.
+  const defaultMode = tab === 'directional' ? 'line' : 'point';
+  prevMode = defaultMode;
+  document.getElementById('modePoint').style.display = tab === 'directional' ? 'none' : '';
 
   // Toggle canvas visibility
   document.getElementById('canvas-container').style.display =
@@ -153,9 +158,9 @@ function switchTab(tab) {
   document.getElementById('tabMagnetic').classList.toggle('active',    tab === 'magnetic');
   document.getElementById('tabDirectional').classList.toggle('active', tab === 'directional');
 
-  // Cancel any active line drawing and reset to point mode
+  // Cancel any active line drawing and reset to the appropriate default mode
   getActiveSketch().cancelDrawingLine();
-  setMode('point');
+  setMode(defaultMode);
 }
 
 document.getElementById('tabMagnetic').addEventListener('click',    () => switchTab('magnetic'));
