@@ -275,6 +275,15 @@ document.getElementById('clear').addEventListener('click', () => {
 document.getElementById('undoBtn').addEventListener('click', () => getActiveSketch().undo());
 document.getElementById('redoBtn').addEventListener('click', () => getActiveSketch().redo());
 
+// ── Welcome modal ─────────────────────────────────────────────────────────────
+{
+  const overlay = document.getElementById('welcome-overlay');
+  const closeBtn = document.getElementById('welcome-close');
+  const dismiss = () => overlay.classList.add('hidden');
+  closeBtn.addEventListener('click', dismiss);
+  overlay.addEventListener('click', e => { if (e.target === overlay) dismiss(); });
+}
+
 // ── Undo / Redo keyboard shortcuts ────────────────────────────────────────────
 document.addEventListener('keydown', (e) => {
   if (e.metaKey && !e.shiftKey && e.key === 'z') {

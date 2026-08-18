@@ -142,6 +142,9 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
     let marqueeEnd       = { x: 0, y: 0 };
     let multiSelected    = new Map();  // sourceIdx → Set<vertexIdx> | null (null = whole point source)
     let groupDragOrigins = null;       // {idx → deep-cloned source} snapshot at group-drag start
+    let lastBodyClickMs  = 0;          // timestamp of last body-click insert (double-click detection)
+    let bodyInsertIdx    = -1;         // source idx of pending body insert (for double-click undo)
+    let bodyInsertTimer  = null;       // clears bodyInsertIdx after double-click window
 
     let cachedMaxStrength = 1;
 
@@ -544,7 +547,7 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
           for (let h = 0; h < src.points.length; h++) {
             if (inBox(src.points[h].x, src.points[h].y)) verts.add(h);
           }
-          if (verts.size > 0) result.set(i, verts);
+          if (verts.size > 0) result.set(i, verts.size === src.points.length ? null : verts);
         }
       }
       return result;
@@ -658,10 +661,17 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
           for (const [idx, vertexSet] of multiSelected) {
             const src    = sources[idx];
             const origin = groupDragOrigins[idx];
-            if (src.type === 'point' || vertexSet === null) {
-              // Move the whole point source
+            if (src.type === 'point') {
               src.x = origin.x + dx;
               src.y = origin.y + dy;
+            } else if (vertexSet === null) {
+              // Move all vertices and their control points
+              for (let h = 0; h < src.points.length; h++) {
+                const v = src.points[h], ov = origin.points[h];
+                v.x = ov.x + dx; v.y = ov.y + dy;
+                v.cp1.x = ov.cp1.x + dx; v.cp1.y = ov.cp1.y + dy;
+                v.cp2.x = ov.cp2.x + dx; v.cp2.y = ov.cp2.y + dy;
+              }
             } else {
               // Move only the selected vertices (and their control points)
               for (const h of vertexSet) {
@@ -767,18 +777,29 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
           const src = sources[selectedIdx];
           const sh  = selectedHandle;
           if (src.type === 'line' && sh?.kind === 'body') {
-            saveState();
-            const s = sh.segIdx;
-            const A = src.points[s];
-            const B = src.points[s + 1];
-            const isBezier = !(A.type === 'corner' && B.type === 'corner');
-            if (isBezier) {
-              const newVtx = splitBezierAt(A, B, sh.t ?? 0.5);
-              src.points.splice(s + 1, 0, newVtx);
+            const now = Date.now();
+            if (now - lastBodyClickMs < 400) {
+              // Second click of a double-click — skip insert; doubleClicked will select
+              lastBodyClickMs = 0;
             } else {
-              src.points.splice(s + 1, 0, makeVertex(mouseDownX, mouseDownY));
+              lastBodyClickMs = now;
+              saveState();
+              const s = sh.segIdx;
+              const A = src.points[s];
+              const B = src.points[s + 1];
+              const isBezier = !(A.type === 'corner' && B.type === 'corner');
+              if (isBezier) {
+                const newVtx = splitBezierAt(A, B, sh.t ?? 0.5);
+                src.points.splice(s + 1, 0, newVtx);
+              } else {
+                src.points.splice(s + 1, 0, makeVertex(mouseDownX, mouseDownY));
+              }
+              invalidateCache();
+              // Track for double-click detection (second click hits new vertex, not body)
+              bodyInsertIdx = selectedIdx;
+              clearTimeout(bodyInsertTimer);
+              bodyInsertTimer = setTimeout(() => { bodyInsertIdx = -1; }, 500);
             }
-            invalidateCache();
           }
         }
         editDragging = false;
@@ -820,7 +841,41 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
 
       if (mode !== 'edit') return;
       const hit = hitTestSources(p.mouseX, p.mouseY);
-      if (hit.idx < 0 || hit.handle?.kind !== 'vertex') return;
+      if (hit.idx < 0) return;
+
+      // Body double-click → undo first-click insert and select entire line.
+      // Also handles the case where the first click inserted a vertex so the second
+      // click hit that vertex instead of the body — detected via bodyInsertIdx.
+      const isBodyDblClick = hit.handle?.kind === 'body' ||
+        (bodyInsertIdx >= 0 && bodyInsertIdx === hit.idx);
+      if (isBodyDblClick) {
+        clearTimeout(bodyInsertTimer);
+        bodyInsertTimer = null;
+        const idxToSelect = bodyInsertIdx >= 0 ? bodyInsertIdx : hit.idx;
+        bodyInsertIdx = -1;
+        // If second click landed on the newly-inserted vertex, mousePressed #2 called
+        // saveState() adding an extra undo entry — discard it before restoring pre-insert.
+        if (hit.handle?.kind === 'vertex' && undoStack.length > 0) undoStack.pop();
+        if (undoStack.length > 0) {
+          const snapshot = undoStack.pop();
+          sources.length = 0;
+          snapshot.forEach(s => sources.push(s));
+          redoStack = [];
+          invalidateCache();
+        }
+        multiSelected.clear();
+        multiSelected.set(idxToSelect, null);
+        selectedIdx    = -1;
+        selectedHandle = null;
+        groupDragOrigins = null;
+        p.redraw();
+        return;
+      }
+      bodyInsertIdx = -1;
+      clearTimeout(bodyInsertTimer);
+      bodyInsertTimer = null;
+
+      if (hit.handle?.kind !== 'vertex') return;
       saveState();
       const src = sources[hit.idx];
       const v   = src.points[hit.handle.h];

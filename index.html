@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Flow Field</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Besley:wght@500&family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -16,7 +19,10 @@
   <div id="app-row">
 
     <aside id="sidebar">
-      <h1>Flow Field</h1>
+      <div class="sidebar-brand">
+        <h1>Flow Field</h1>
+        <p class="attribution">Made by Izzy Wootonn of <a href="https://www.studioever.green/" target="_blank" rel="noopener noreferrer">Studio Evergreen</a></p>
+      </div>
 
       <section class="control-group">
         <h2>Canvas</h2>
@@ -102,11 +108,11 @@
         <h2>Colors</h2>
         <div class="color-row">
           <label for="colorBg">Background</label>
-          <input type="color" id="colorBg" value="#0d0d0f" />
+          <input type="color" id="colorBg" value="#00382c" />
         </div>
         <div class="color-row">
           <label for="colorField">Field lines</label>
-          <input type="color" id="colorField" value="#bec3dc" />
+          <input type="color" id="colorField" value="#faf7f5" />
         </div>
         <div class="color-row">
           <label for="colorSource">Sources</label>
@@ -151,6 +157,16 @@
     <main id="canvas-container"></main>
     <main id="canvas-container-directional" style="display:none"></main>
 
+  </div>
+
+  <!-- Welcome modal -->
+  <div id="welcome-overlay">
+    <div id="welcome-modal">
+      <h2>Welcome to the<br>Flow Field Generator</h2>
+      <p>This tool was made by Izzy Wootonn of <a href="https://www.studioever.green/" target="_blank" rel="noopener noreferrer">Studio Evergreen</a> and is free to use.</p>
+      <p class="welcome-tagline">Click around and have some fun!</p>
+      <button id="welcome-close">Let's go →</button>
+    </div>
   </div>
 
   <script type="module" src="src/main.js"></script>
