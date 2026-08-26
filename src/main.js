@@ -279,7 +279,19 @@ document.getElementById('redoBtn').addEventListener('click', () => getActiveSket
 {
   const overlay = document.getElementById('welcome-overlay');
   const closeBtn = document.getElementById('welcome-close');
-  const dismiss = () => overlay.classList.add('hidden');
+  const canvasMagnetic = document.getElementById('canvas-container');
+  const canvasDirectional = document.getElementById('canvas-container-directional');
+
+  // Block all pointer events on canvas while modal is visible
+  canvasMagnetic.style.pointerEvents = 'none';
+  canvasDirectional.style.pointerEvents = 'none';
+
+  const dismiss = () => {
+    overlay.classList.add('hidden');
+    canvasMagnetic.style.pointerEvents = '';
+    canvasDirectional.style.pointerEvents = '';
+  };
+
   closeBtn.addEventListener('click', dismiss);
   overlay.addEventListener('click', e => { if (e.target === overlay) dismiss(); });
 }
