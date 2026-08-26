@@ -23,6 +23,11 @@ function makeVertex(x, y) {
   return { x, y, type: 'corner', cp1: { x, y }, cp2: { x, y } };
 }
 
+/** True while the welcome modal is open — all mouse handlers must no-op. */
+function isModalOpen() {
+  return !document.getElementById('welcome-overlay')?.classList.contains('hidden');
+}
+
 /**
  * Auto-compute tangent handles for a vertex being switched to smooth.
  * Modifies the vertex in-place.
@@ -551,7 +556,7 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
 
     p.mousePressed = () => {
       if (!isActive()) return;
-      if (!document.getElementById('welcome-overlay')?.classList.contains('hidden')) return;
+      if (isModalOpen()) return;
       const inBounds = getMode() === 'edit'
         ? (p.mouseX >= -EDIT_TOLERANCE && p.mouseX <= p.width  + EDIT_TOLERANCE &&
            p.mouseY >= -EDIT_TOLERANCE && p.mouseY <= p.height + EDIT_TOLERANCE)
@@ -626,6 +631,7 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
 
     p.mouseDragged = () => {
       if (!isActive()) return;
+      if (isModalOpen()) return;
       const mode = getMode();
 
       if (mode === 'edit') {
@@ -724,6 +730,7 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
 
     p.mouseReleased = () => {
       if (!isActive()) return;
+      if (isModalOpen()) return;
       const mode = getMode();
 
       if (mode === 'edit') {
@@ -799,6 +806,7 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
 
     p.doubleClicked = () => {
       if (!isActive()) return;
+      if (isModalOpen()) return;
       const mode = getMode();
 
       if (mode === 'point' || mode === 'line') {

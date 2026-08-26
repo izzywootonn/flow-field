@@ -18,7 +18,28 @@
 
 html {
   height: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  /* Flipped so the (styled) scrollbar sits on the far left, next to the
+     sidebar it's giving breathing room to; body flips back to normal below. */
+  direction: rtl;
+  scrollbar-width: thin;
+  scrollbar-color: #F2EDE9 transparent;
+}
+
+html::-webkit-scrollbar {
+  width: 7px;
+}
+html::-webkit-scrollbar-track {
+  background: transparent;
+}
+html::-webkit-scrollbar-thumb {
+  background: #F2EDE9;
+  border-radius: 3px;
+  background-clip: padding-box;
+}
+html::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-dim);
 }
 
 html, body {
@@ -29,10 +50,25 @@ html, body {
 }
 
 body {
+  direction: ltr;
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  min-height: 100vh;
+}
+
+/* 20px shorter than the viewport (not a full 100vh) so that breathing room
+   is visible by default, with no scrolling needed — the sidebar's internal
+   scroll clamps to this same reduced height, same as it did to 100vh before.
+   The margin-bottom is a second, always-present 20px of content past the
+   shell, which is what makes the page scrollable as a fallback for cases
+   where even the shrunken shell isn't enough (e.g. a very tall sidebar). */
+#app-shell {
+  height: calc(100vh - 20px);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
+  margin-bottom: 20px;
 }
 
 /* Tab bar */
@@ -41,7 +77,8 @@ body {
   flex-shrink: 0;
   background: var(--sidebar-bg);
   position: relative;
-  padding: 20px 16px 0;
+  /* Left edge matches the sidebar's left border (20px indent) below it */
+  padding: 20px 16px 0 20px;
   align-items: flex-end;
 }
 
@@ -113,7 +150,7 @@ body {
 /* Webkit (Chrome, Safari, Edge) */
 #sidebar::-webkit-scrollbar {
   /* Wider channel so we can add a gap before the border */
-  width: 7px;
+  width: 10px;
 }
 #sidebar::-webkit-scrollbar-track {
   background: transparent;
@@ -121,13 +158,13 @@ body {
 #sidebar::-webkit-scrollbar-thumb {
   background: #F2EDE9;
   border-radius: 3px;
-  /* 2px transparent right gap keeps thumb away from the border */
-  border-right: 2px solid var(--sidebar-bg);
+  /* 5px transparent right gap keeps thumb clear of the border + its stroke */
+  border-right: 5px solid var(--sidebar-bg);
   background-clip: padding-box;
 }
 #sidebar::-webkit-scrollbar-thumb:hover {
   background: var(--accent-dim);
-  border-right: 2px solid var(--sidebar-bg);
+  border-right: 5px solid var(--sidebar-bg);
   background-clip: padding-box;
 }
 
@@ -166,17 +203,17 @@ body {
 
 .attribution a {
   color: var(--text-dim);
-  text-decoration: underline;
-  transition: color 0.15s;
+  text-decoration: none;
 }
 
 .attribution a:hover {
-  color: #c0e2d5;
+  color: var(--text-dim);
+  text-decoration: underline;
 }
 
 /* ── Welcome modal ────────────────────────────────────────────────────────── */
 #welcome-overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
   background: transparent;
   display: flex;
@@ -474,6 +511,12 @@ button#redoBtn:hover {
   gap: 10px;
 }
 
+/* h2's own margin-bottom (used everywhere else for heading-to-content gap)
+   would stack on top of the flex gap here, doubling the space — cancel it. */
+.export-section h2 {
+  margin-bottom: 0;
+}
+
 .export-row {
   display: flex;
   gap: 6px;
@@ -504,21 +547,59 @@ button#clear:hover {
   margin-top: 8px;
 }
 
+/* Wraps both canvas containers so the welcome modal (positioned absolute
+   within it) centers on the canvas area rather than the whole viewport. */
+#canvas-area {
+  position: relative;
+  flex: 1;
+  display: flex;
+  min-width: 0;
+}
+
 /* Canvas containers */
 #canvas-container,
 #canvas-container-directional {
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
+  overflow: auto;
   background: var(--sidebar-bg);
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #F2EDE9 transparent;
 }
 
+/* margin: auto (rather than align/justify-content: center on the parent)
+   centers the canvas when it's smaller than the viewport, but — unlike
+   centering flex alignment — doesn't clip the top/left of the canvas out
+   of scroll reach once it's larger than the viewport in either direction. */
 #canvas-container canvas,
 #canvas-container-directional canvas {
+  margin: auto;
   display: block;
   cursor: crosshair;
+}
+
+#canvas-container::-webkit-scrollbar,
+#canvas-container-directional::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+#canvas-container::-webkit-scrollbar-track,
+#canvas-container-directional::-webkit-scrollbar-track {
+  background: transparent;
+}
+#canvas-container::-webkit-scrollbar-thumb,
+#canvas-container-directional::-webkit-scrollbar-thumb {
+  background: #F2EDE9;
+  border-radius: 3px;
+  border: 2px solid var(--sidebar-bg);
+  background-clip: padding-box;
+}
+#canvas-container::-webkit-scrollbar-thumb:hover,
+#canvas-container-directional::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-dim);
+  border: 2px solid var(--sidebar-bg);
+  background-clip: padding-box;
 }
 
 /* Responsive: sidebar goes to top on narrow screens */

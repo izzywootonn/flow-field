@@ -18,6 +18,11 @@ function makeVertex(x, y) {
   return { x, y, type: 'corner', cp1: { x, y }, cp2: { x, y } };
 }
 
+/** True while the welcome modal is open — all mouse handlers must no-op. */
+function isModalOpen() {
+  return !document.getElementById('welcome-overlay')?.classList.contains('hidden');
+}
+
 /**
  * Auto-compute tangent handles for a vertex being switched to smooth.
  * Modifies the vertex in-place.
@@ -561,7 +566,7 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
 
     p.mousePressed = () => {
       if (!isActive()) return;
-      if (!document.getElementById('welcome-overlay')?.classList.contains('hidden')) return;
+      if (isModalOpen()) return;
       // In edit mode allow grabbing handles slightly outside the canvas boundary
       const inBounds = getMode() === 'edit'
         ? (p.mouseX >= -EDIT_TOLERANCE && p.mouseX <= p.width  + EDIT_TOLERANCE &&
@@ -644,6 +649,7 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
 
     p.mouseDragged = () => {
       if (!isActive()) return;
+      if (isModalOpen()) return;
       const mode = getMode();
 
       if (mode === 'edit') {
@@ -744,6 +750,7 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
 
     p.mouseReleased = () => {
       if (!isActive()) return;
+      if (isModalOpen()) return;
       const mode = getMode();
 
       if (mode === 'edit') {
@@ -824,6 +831,7 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
 
     p.doubleClicked = () => {
       if (!isActive()) return;
+      if (isModalOpen()) return;
       const mode = getMode();
 
       // ── Point / Line mode: double-click an existing source to enter edit ──
