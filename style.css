@@ -186,6 +186,7 @@ body {
   align-items: center;
   gap: 16px;
   text-align: center;
+  position: relative;
 }
 
 #welcome-modal h2 {
@@ -219,23 +220,24 @@ body {
   text-decoration: underline;
 }
 
+/* X close button — top-right corner of modal */
 #welcome-close {
-  margin-top: 12px;
-  padding: 11px 36px;
-  background: var(--bg);
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: none;
   border: none;
-  border-radius: 4px;
-  color: var(--text);
-  font-family: 'Hanken Grotesk', system-ui, sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  color: var(--bg);
+  font-size: 16px;
+  line-height: 1;
+  padding: 4px 6px;
   cursor: pointer;
-  transition: background 0.15s;
+  opacity: 0.6;
+  transition: opacity 0.15s;
 }
 
 #welcome-close:hover {
-  background: #F2EDE9;
+  opacity: 1;
 }
 
 .control-group h2 {
@@ -437,10 +439,10 @@ button#exportPngBtn:hover {
   border-color: var(--text);
 }
 
-/* Undo / Redo — solid mint fill, dark text (most prominent secondary actions) */
+/* Undo / Redo — solid mid-green fill; beige + dark green stroke on hover */
 button#undoBtn,
 button#redoBtn {
-  border: none;
+  border: 1px solid transparent;
   background: var(--accent);
   color: var(--bg);
 }
@@ -448,7 +450,7 @@ button#redoBtn {
 button#undoBtn:hover,
 button#redoBtn:hover {
   background: #F2EDE9;
-  border: 1px solid var(--text);
+  border-color: var(--text);
   color: var(--text);
 }
 
@@ -467,18 +469,18 @@ button#redoBtn:hover {
   flex: 1;
 }
 
-/* Clear Sources — mint outline + mint text, danger fill on hover */
+/* Clear Sources — beige fill, no border; danger fill on hover */
 button#clear {
-  border-color: var(--accent);
-  background: transparent;
-  color: var(--accent);
+  background: #F2EDE9;
+  border-color: transparent;
+  color: var(--text);
   margin-top: 8px;
 }
 
 button#clear:hover {
   background: var(--danger);
   border-color: var(--danger);
-  color: var(--text);
+  color: var(--bg);
 }
 
 .hint {
