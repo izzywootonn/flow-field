@@ -41,7 +41,7 @@ body {
   flex-shrink: 0;
   background: var(--sidebar-bg);
   position: relative;
-  padding: 6px 16px 0;
+  padding: 20px 16px 0;
   align-items: flex-end;
 }
 
@@ -95,17 +95,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--section-gap);
-  padding: 20px 16px 20px 20px;
+  padding: 20px 16px;
   overflow-y: auto;
-  direction: rtl; /* moves scrollbar to left side */
   /* Firefox */
   scrollbar-width: thin;
   scrollbar-color: var(--accent) transparent;
-}
-
-/* Restore LTR for all sidebar content */
-#sidebar > * {
-  direction: ltr;
 }
 
 /* Webkit (Chrome, Safari, Edge) */
@@ -508,7 +502,6 @@ button#clear:hover {
     flex-wrap: wrap;
     gap: 12px;
     padding: 12px;
-    direction: ltr; /* reset RTL (used for left scrollbar on desktop) */
   }
 
   #sidebar h1 {
