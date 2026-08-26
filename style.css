@@ -227,11 +227,14 @@ body {
   border-radius: 4px;
   color: var(--text);
   font-family: 'Hanken Grotesk', system-ui, sans-serif;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.06em;
   cursor: pointer;
   transition: background 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }
 
 #welcome-close:hover {
@@ -243,7 +246,8 @@ body {
   display: inline-block;
   position: relative;
   width: 1.1em;
-  vertical-align: middle;
+  height: 1.3em; /* slightly taller than text */
+  flex-shrink: 0;
 }
 .btn-arrow .arrow-diag,
 .btn-arrow .arrow-right {
@@ -252,6 +256,7 @@ body {
   top: 50%;
   transform: translateY(-50%);
   transition: opacity 0.2s ease;
+  font-size: 1.15em; /* arrow a little bigger than label text */
   line-height: 1;
 }
 .btn-arrow .arrow-diag { opacity: 1; }
@@ -468,7 +473,7 @@ button#redoBtn {
 
 button#undoBtn:hover,
 button#redoBtn:hover {
-  background: var(--accent-dim);
+  background: #F2EDE9;
   color: var(--text);
 }
 
