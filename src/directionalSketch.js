@@ -268,7 +268,7 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
                 const showCp1 = h > 0;
                 const showCp2 = h < src.points.length - 1;
 
-                p.strokeWeight(0.5);
+                p.strokeWeight(1.5);
                 p.stroke(c + '77');
                 p.noFill();
                 if (showCp1) p.line(v.x, v.y, v.cp1.x, v.cp1.y);

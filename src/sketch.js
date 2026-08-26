@@ -278,7 +278,7 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
                 const showCp2 = h < src.points.length - 1;
 
                 // Handle stems (thin lines from vertex to handle)
-                p.strokeWeight(0.5);
+                p.strokeWeight(1.5);
                 p.stroke(c + '77');
                 p.noFill();
                 if (showCp1) p.line(v.x, v.y, v.cp1.x, v.cp1.y);
