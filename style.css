@@ -118,23 +118,26 @@ body {
   background: var(--accent);
 }
 
-/* Persistent brand header — above tabs, never scrolls */
+/* Persistent brand header — full-width, above tabs, never scrolls */
 #brand-header {
-  width: 300px;
-  background: var(--sidebar-bg);
-  padding: 16px 16px 12px;
+  width: 100%;
+  background: var(--bg);
+  padding: 14px 20px;
   border-bottom: 1.5px solid var(--sidebar-border);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 #brand-header h1 {
   font-family: 'Besley', Georgia, serif;
-  font-size: 14px;
+  font-size: 24px;
   font-weight: 500;
   letter-spacing: 0.10em;
   text-transform: uppercase;
   color: var(--accent);
-  padding-bottom: 5px;
 }
 
 .attribution {
@@ -144,26 +147,25 @@ body {
   color: var(--text-dim);
   letter-spacing: 0.02em;
   line-height: 1.4;
+  text-align: right;
+  flex-shrink: 0;
 }
 
 .attribution a {
   color: var(--text-dim);
-  text-decoration: none;
+  text-decoration: underline;
   transition: color 0.15s;
 }
 
 .attribution a:hover {
   color: var(--text);
-  text-decoration: underline;
 }
 
 /* ── Welcome modal ────────────────────────────────────────────────────────── */
 #welcome-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 56, 44, 0.92);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -442,6 +444,7 @@ button#clear {
   border-color: var(--accent);
   background: transparent;
   color: var(--accent);
+  margin-top: 8px;
 }
 
 button#clear:hover {
