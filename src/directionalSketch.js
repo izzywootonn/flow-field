@@ -198,7 +198,7 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
                               multiVerts.size === src.points.length));
         const isSelected   = isFullySel;
         const isHovered    = inEdit && i === hoverIdx && !isFullySel && !inMultiSel;
-        const c = isFullySel ? '#ffffff' : isHovered ? colorSource + 'bb' : colorSource;
+        const c = isFullySel ? '#c0e2d5' : isHovered ? colorSource + 'bb' : colorSource;
 
         p.stroke(c);
         p.noFill();
@@ -225,8 +225,8 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
           if (inEdit) {
             const isAngleSel = isSingleSel && selectedHandle?.kind === 'angle';
             p.strokeWeight(isAngleSel ? 2 : 1);
-            p.stroke(isAngleSel ? '#ffffff' : c);
-            isAngleSel ? p.fill('#ffffff') : p.noFill();
+            p.stroke(isAngleSel ? '#c0e2d5' : c);
+            isAngleSel ? p.fill('#c0e2d5') : p.noFill();
             p.circle(tipX, tipY, ANGLE_HANDLE_R * 2);
           }
         } else {
@@ -255,11 +255,11 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
               const v        = src.points[h];
               const isSelVtx = (isSingleSel && selectedHandle?.kind === 'vertex' && selectedHandle.h === h) ||
                                (inMultiSel  && multiVerts !== null && multiVerts.has(h));
-              const vtxColor = isSelVtx ? '#ffffff' : c;
+              const vtxColor = isSelVtx ? '#c0e2d5' : c;
 
               // Vertex square
               p.stroke(vtxColor);
-              p.fill(isSelVtx ? '#ffffff' : 'transparent');
+              p.fill(isSelVtx ? '#c0e2d5' : 'transparent');
               p.strokeWeight(isSelVtx ? 2 : 1);
               p.rect(v.x, v.y, 8, 8);
 
@@ -280,13 +280,13 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
 
                 if (showCp1) {
                   const isSel = isSelected && selectedHandle?.kind === 'cp1' && selectedHandle.h === h;
-                  if (isSel) { p.fill('#ffffff'); p.strokeWeight(2); }
+                  if (isSel) { p.fill('#c0e2d5'); p.strokeWeight(2); }
                   p.circle(v.cp1.x, v.cp1.y, 7);
                   p.noFill(); p.strokeWeight(1);
                 }
                 if (showCp2) {
                   const isSel = isSelected && selectedHandle?.kind === 'cp2' && selectedHandle.h === h;
-                  if (isSel) { p.fill('#ffffff'); p.strokeWeight(2); }
+                  if (isSel) { p.fill('#c0e2d5'); p.strokeWeight(2); }
                   p.circle(v.cp2.x, v.cp2.y, 7);
                   p.noFill(); p.strokeWeight(1);
                 }
@@ -304,7 +304,7 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
                   p.line(v.x, v.y, cp.x, cp.y);
                   p.strokeWeight(1); p.stroke(c); p.noFill();
                   const isSel = isSelected && selectedHandle?.kind === kind && selectedHandle.h === h;
-                  if (isSel) { p.fill('#ffffff'); p.strokeWeight(2); }
+                  if (isSel) { p.fill('#c0e2d5'); p.strokeWeight(2); }
                   p.circle(cp.x, cp.y, 7);
                   p.noFill(); p.strokeWeight(1);
                 }
@@ -351,7 +351,7 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
       for (let i = 0; i < sources.length; i++) {
         const src = sources[i];
         const isSelected = i === selectedIdx;
-        const color = isSelected ? '#ffffff' : colorSource;
+        const color = isSelected ? '#c0e2d5' : colorSource;
 
         if (src.type === 'point') {
           const { ex, ey, offCanvas, dx, dy } = edgePin(src.x, src.y);
