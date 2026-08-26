@@ -5,13 +5,13 @@
 }
 
 :root {
-  --bg: #00382c;
-  --sidebar-bg: #02473a;
-  --sidebar-border: #00382c;
-  --text: #faf7f5;
-  --text-dim: #c0e2d5;
-  --accent: #c0e2d5;
-  --accent-dim: #00382c;
+  --bg: #faf7f5;
+  --sidebar-bg: #faf7f5;
+  --sidebar-border: #02473a;
+  --text: #00382c;
+  --text-dim: #02473a;
+  --accent: #02473a;
+  --accent-dim: #faf7f5;
   --danger: #ee6b5b;
   --section-gap: 20px;
 }
@@ -52,7 +52,7 @@ body {
   bottom: 0;
   left: 0;
   width: 300px;
-  height: 3px;
+  height: 1px;
   background: var(--sidebar-border);
 }
 
@@ -122,7 +122,7 @@ body {
   width: 100%;
   background: var(--bg);
   padding: 14px 20px;
-  border-bottom: 1.5px solid var(--sidebar-border);
+  border-bottom: 1px solid var(--sidebar-border);
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -267,7 +267,7 @@ body {
 
 input[type="range"] {
   width: 100%;
-  height: 3px;
+  height: 1px;
   appearance: none;
   background: var(--sidebar-border);
   border-radius: 2px;
@@ -308,10 +308,10 @@ input[type="range"]::-moz-range-thumb {
 .mode-btn {
   flex: 1;
   padding: 7px 0;
-  background: var(--bg);
-  border: 1.5px solid var(--bg);
+  background: #ffffff;
+  border: 1px solid var(--text);
   border-radius: 4px;
-  color: var(--accent);
+  color: var(--text);
   font-family: 'Hanken Grotesk', system-ui, sans-serif;
   font-size: 13px;
   font-weight: 500;
@@ -320,13 +320,13 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .mode-btn:hover {
-  border-color: var(--sidebar-border);
+  background: var(--bg);
 }
 
 .mode-btn.active {
-  background: var(--bg);
-  border-color: var(--accent);
-  color: var(--accent);
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
 }
 
 /* chaosBtn is now a .mode-btn — active state handled by .mode-btn.active */
