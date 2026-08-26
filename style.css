@@ -16,8 +16,12 @@
   --section-gap: 20px;
 }
 
-html, body {
+html {
   height: 100%;
+  overflow: hidden;
+}
+
+html, body {
   background: var(--bg);
   color: var(--text);
   font-family: 'Hanken Grotesk', system-ui, sans-serif;
@@ -37,16 +41,26 @@ body {
   flex-shrink: 0;
   height: 36px;
   background: var(--sidebar-bg);
-  border-bottom: 1px solid var(--sidebar-border);
+  position: relative;
   padding: 0 16px;
   align-items: flex-end;
+}
+
+/* Divider only under the sidebar (300px), not full-width */
+#tab-bar::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 300px;
+  height: 1.5px;
+  background: var(--sidebar-border);
 }
 
 .tab-btn {
   padding: 6px 18px;
   background: transparent;
-  border: 1px solid transparent;
-  border-bottom: none;
+  border: none;
   border-radius: 4px 4px 0 0;
   color: var(--text-dim);
   font-family: 'Hanken Grotesk', system-ui, sans-serif;
@@ -55,8 +69,6 @@ body {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
-  position: relative;
-  top: 1px;
   transition: color 0.15s;
 }
 
@@ -64,9 +76,8 @@ body {
 
 .tab-btn.active {
   background: var(--bg);
-  border-color: var(--sidebar-border);
-  border-bottom-color: var(--bg);
   color: var(--accent);
+  border-radius: 4px 4px 0 0;
 }
 
 /* App row: sidebar + canvas side-by-side, fills remaining height */
@@ -82,21 +93,41 @@ body {
   width: 300px;
   min-width: 300px;
   background: var(--sidebar-bg);
-  border-right: 1px solid var(--sidebar-border);
   display: flex;
   flex-direction: column;
   gap: var(--section-gap);
   padding: 20px 16px;
   overflow-y: auto;
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: var(--sidebar-border) transparent;
 }
 
-/* Brand block: title + attribution grouped together */
-.sidebar-brand {
-  padding-bottom: 12px;
+/* Webkit (Chrome, Safari, Edge) */
+#sidebar::-webkit-scrollbar {
+  width: 5px;
+}
+#sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+#sidebar::-webkit-scrollbar-thumb {
+  background: var(--sidebar-border);
+  border-radius: 3px;
+}
+#sidebar::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/* Persistent brand header — above tabs, never scrolls */
+#brand-header {
+  width: 300px;
+  background: var(--sidebar-bg);
+  padding: 16px 16px 12px;
   border-bottom: 1.5px solid var(--sidebar-border);
+  flex-shrink: 0;
 }
 
-#sidebar h1 {
+#brand-header h1 {
   font-family: 'Besley', Georgia, serif;
   font-size: 14px;
   font-weight: 500;
@@ -158,18 +189,18 @@ body {
 
 #welcome-modal h2 {
   font-family: 'Besley', Georgia, serif;
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--bg);
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 #welcome-modal p {
   font-size: 13px;
   color: var(--bg);
-  line-height: 1.7;
+  line-height: 1.4;
   text-wrap: balance;
 }
 
@@ -270,10 +301,10 @@ input[type="range"]::-moz-range-thumb {
 .mode-btn {
   flex: 1;
   padding: 7px 0;
-  background: transparent;
-  border: 1.5px solid var(--sidebar-border);
+  background: var(--bg);
+  border: 1.5px solid var(--bg);
   border-radius: 4px;
-  color: var(--text-dim);
+  color: var(--accent);
   font-family: 'Hanken Grotesk', system-ui, sans-serif;
   font-size: 13px;
   font-weight: 500;
@@ -282,26 +313,23 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .mode-btn:hover {
-  border-color: var(--accent-dim);
-  color: var(--text);
+  border-color: var(--sidebar-border);
 }
 
 .mode-btn.active {
-  background: var(--accent-dim);
+  background: var(--bg);
   border-color: var(--accent);
   color: var(--accent);
 }
 
-/* Chaos button active state — solid fill to clearly signal "on" */
-#chaosBtn.active {
-  background: var(--accent);
-  color: #00382c;
-}
+/* chaosBtn is now a .mode-btn — active state handled by .mode-btn.active */
 
-/* Toggle button inside color-row — compact, no flex-stretch */
-#toggleSources {
+/* Toggle buttons inside color-row — compact, no flex-stretch */
+#toggleSources,
+#chaosBtn {
   flex: none;
   padding: 4px 10px;
+  font-size: 11px;
 }
 
 /* Action buttons */
@@ -354,12 +382,8 @@ input[type="color"]::-webkit-color-swatch {
 }
 
 /* Shared base for all action buttons */
-button#randomize,
-button#chaosBtn,
-button#exportSvg,
-button#exportDirectionalSvg,
-button#exportMagneticPng,
-button#exportDirectionalPng,
+button#exportSvgBtn,
+button#exportPngBtn,
 button#undoBtn,
 button#redoBtn,
 button#clear {
@@ -377,33 +401,19 @@ button#clear {
   transition: all 0.15s;
 }
 
-/* Randomize + Scatter — solid dark fill, no border, pale green text */
-button#randomize,
-button#chaosBtn {
-  background: var(--bg);
-  border-color: transparent;
-}
-
-button#randomize:hover,
-button#chaosBtn:hover {
-  background: var(--accent-dim);
-  border-color: transparent;
-}
-
 /* Export buttons — accent border, hover fills accent */
-button#exportSvg:hover,
-button#exportDirectionalSvg:hover,
-button#exportMagneticPng:hover,
-button#exportDirectionalPng:hover {
+button#exportSvgBtn:hover,
+button#exportPngBtn:hover {
   background: var(--accent);
   color: #00382c;
 }
 
-/* Undo / Redo — white border + white text */
+/* Undo / Redo — solid mint fill, dark text (most prominent secondary actions) */
 button#undoBtn,
 button#redoBtn {
-  border-color: var(--text);
-  color: var(--text);
+  border: none;
+  background: var(--accent);
+  color: var(--bg);
 }
 
 button#undoBtn:hover,
@@ -413,10 +423,9 @@ button#redoBtn:hover {
 }
 
 .export-section {
-  padding-top: 16px;
-  border-top: 1.5px solid var(--sidebar-border);
   display: flex;
   flex-direction: column;
+  gap: 10px;
 }
 
 .export-row {
@@ -428,15 +437,17 @@ button#redoBtn:hover {
   flex: 1;
 }
 
+/* Clear Sources — mint outline + mint text, danger fill on hover */
 button#clear {
-  border: none;
-  background: var(--accent);
-  color: var(--bg);
+  border-color: var(--accent);
+  background: transparent;
+  color: var(--accent);
 }
 
 button#clear:hover {
-  background: var(--text);
-  color: var(--bg);
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--text);
 }
 
 .hint {

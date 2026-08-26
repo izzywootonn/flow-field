@@ -144,15 +144,11 @@ function switchTab(tab) {
   // Toggle sidebar section visibility
   const magneticControls    = document.getElementById('magnetic-controls');
   const directionalControls = document.getElementById('directional-controls');
-  const magneticActions     = document.getElementById('magnetic-actions');
-  const magneticExport      = document.getElementById('magnetic-export');
-  const directionalExport   = document.getElementById('directional-export');
+  const magneticChaos       = document.getElementById('magnetic-chaos');
 
   if (magneticControls)    magneticControls.style.display    = tab === 'magnetic'    ? '' : 'none';
   if (directionalControls) directionalControls.style.display = tab === 'directional' ? '' : 'none';
-  if (magneticActions)     magneticActions.style.display     = tab === 'magnetic'    ? '' : 'none';
-  if (magneticExport)      magneticExport.style.display      = tab === 'magnetic'    ? '' : 'none';
-  if (directionalExport)   directionalExport.style.display   = tab === 'directional' ? '' : 'none';
+  if (magneticChaos)       magneticChaos.style.display       = tab === 'magnetic'    ? '' : 'none';
 
   // Update tab button active states
   document.getElementById('tabMagnetic').classList.toggle('active',    tab === 'magnetic');
@@ -228,10 +224,6 @@ for (const picker of Object.values(colorPickers)) {
 }
 
 // ── Action buttons ────────────────────────────────────────────────────────────
-document.getElementById('randomize').addEventListener('click', () => {
-  getActiveSketch().addRandomSources(8);
-});
-
 function downloadCanvasPng(canvas, filename) {
   canvas.toBlob(blob => {
     const url = URL.createObjectURL(blob);
@@ -243,25 +235,28 @@ function downloadCanvasPng(canvas, filename) {
   }, 'image/png');
 }
 
-document.getElementById('exportSvg').addEventListener('click', () => {
-  exportSVG(getParams(), sketch.getSources(), sketch.getMaxStrength(), showSources, sketch.getChaosMode(), sketch.getChaosAngles());
+document.getElementById('exportSvgBtn').addEventListener('click', () => {
+  if (activeTab === 'magnetic') {
+    exportSVG(getParams(), sketch.getSources(), sketch.getMaxStrength(), showSources, sketch.getChaosMode(), sketch.getChaosAngles());
+  } else {
+    exportDirectionalSVG(getDirectionalParams(), directionalSketch.getSources(), showSources);
+  }
 });
 
-document.getElementById('exportMagneticPng').addEventListener('click', () => {
-  downloadCanvasPng(sketch.getCanvas(), 'flow-field.png');
-});
-
-document.getElementById('exportDirectionalSvg').addEventListener('click', () => {
-  exportDirectionalSVG(getDirectionalParams(), directionalSketch.getSources(), showSources);
-});
-
-document.getElementById('exportDirectionalPng').addEventListener('click', () => {
-  downloadCanvasPng(directionalSketch.getCanvas(), 'flow-field-directional.png');
+document.getElementById('exportPngBtn').addEventListener('click', () => {
+  if (activeTab === 'magnetic') {
+    downloadCanvasPng(sketch.getCanvas(), 'flow-field.png');
+  } else {
+    downloadCanvasPng(directionalSketch.getCanvas(), 'flow-field-directional.png');
+  }
 });
 
 document.getElementById('chaosBtn').addEventListener('click', () => {
   sketch.toggleChaos();
-  document.getElementById('chaosBtn').classList.toggle('active', sketch.getChaosMode());
+  const isOn = sketch.getChaosMode();
+  const btn = document.getElementById('chaosBtn');
+  btn.classList.toggle('active', isOn);
+  btn.textContent = isOn ? 'On' : 'Off';
 });
 
 document.getElementById('toggleSources').addEventListener('click', () => {

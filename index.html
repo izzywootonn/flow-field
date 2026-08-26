@@ -12,6 +12,12 @@
 </head>
 <body>
 
+  <!-- Persistent brand header — sits above tabs, never scrolls -->
+  <div id="brand-header">
+    <h1>Flow Field</h1>
+    <p class="attribution">Made by Izzy Wootonn of <a href="https://www.studioever.green/" target="_blank" rel="noopener noreferrer">Studio Evergreen</a></p>
+  </div>
+
   <div id="tab-bar">
     <button id="tabMagnetic"    class="tab-btn active">Magnetic</button>
     <button id="tabDirectional" class="tab-btn">Directional</button>
@@ -20,10 +26,6 @@
   <div id="app-row">
 
     <aside id="sidebar">
-      <div class="sidebar-brand">
-        <h1>Flow Field</h1>
-        <p class="attribution">Made by Izzy Wootonn of <a href="https://www.studioever.green/" target="_blank" rel="noopener noreferrer">Studio Evergreen</a></p>
-      </div>
 
       <section class="control-group">
         <h2>Canvas</h2>
@@ -95,14 +97,18 @@
         </section>
       </div>
 
+      <!-- Show Sources + Scatter (magnetic-only) toggles -->
       <section class="control-group">
-        <h2>Draw Mode</h2>
-        <div class="mode-toggle">
-          <button id="modePoint" class="mode-btn active">Point</button>
-          <button id="modeLine" class="mode-btn">Line</button>
-          <button id="modeEdit" class="mode-btn">Edit</button>
+        <div class="color-row">
+          <label>Show Sources</label>
+          <button id="toggleSources" class="mode-btn active">On</button>
         </div>
-        <p class="hint" id="hint">Click to place a point source</p>
+        <div id="magnetic-chaos">
+          <div class="color-row">
+            <label>Scatter</label>
+            <button id="chaosBtn" class="mode-btn">Off</button>
+          </div>
+        </div>
       </section>
 
       <section class="control-group">
@@ -119,39 +125,30 @@
           <label for="colorSource">Sources</label>
           <input type="color" id="colorSource" value="#ff6e50" />
         </div>
-        <div class="color-row">
-          <label>Sources visible</label>
-          <button id="toggleSources" class="mode-btn active">On</button>
-        </div>
       </section>
 
-      <section class="control-group actions">
-        <button id="randomize">Randomize Sources</button>
-        <div id="magnetic-actions"><button id="chaosBtn">Scatter Field</button></div>
-        <div class="undo-redo">
+      <section class="control-group">
+        <h2>Draw Mode</h2>
+        <div class="mode-toggle">
+          <button id="modePoint" class="mode-btn active">Point</button>
+          <button id="modeLine" class="mode-btn">Line</button>
+          <button id="modeEdit" class="mode-btn">Edit</button>
+        </div>
+        <p class="hint" id="hint">Click to place a point source</p>
+        <div class="undo-redo" style="margin-top: 10px;">
           <button id="undoBtn">Undo</button>
           <button id="redoBtn">Redo</button>
         </div>
         <button id="clear" class="secondary">Clear Sources</button>
       </section>
 
-      <div id="magnetic-export">
-        <section class="export-section">
-          <div class="export-row">
-            <button id="exportSvg">Export SVG</button>
-            <button id="exportMagneticPng">Export PNG</button>
-          </div>
-        </section>
-      </div>
-
-      <div id="directional-export" style="display:none">
-        <section class="export-section">
-          <div class="export-row">
-            <button id="exportDirectionalSvg">Export SVG</button>
-            <button id="exportDirectionalPng">Export PNG</button>
-          </div>
-        </section>
-      </div>
+      <section class="control-group export-section">
+        <h2>Export</h2>
+        <div class="export-row">
+          <button id="exportSvgBtn">SVG</button>
+          <button id="exportPngBtn">PNG</button>
+        </div>
+      </section>
 
     </aside>
 
