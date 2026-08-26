@@ -232,37 +232,11 @@ body {
   letter-spacing: 0.06em;
   cursor: pointer;
   transition: background 0.15s;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
 }
 
 #welcome-close:hover {
-  background: var(--sidebar-bg);
+  background: #F2EDE9;
 }
-
-/* Arrow animation: ↗ by default → → on hover */
-.btn-arrow {
-  display: inline-block;
-  position: relative;
-  width: 1.1em;
-  height: 1.3em; /* slightly taller than text */
-  flex-shrink: 0;
-}
-.btn-arrow .arrow-diag,
-.btn-arrow .arrow-right {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  transition: opacity 0.2s ease;
-  font-size: 1.15em; /* arrow a little bigger than label text */
-  line-height: 1;
-}
-.btn-arrow .arrow-diag { opacity: 1; }
-.btn-arrow .arrow-right { opacity: 0; }
-#welcome-close:hover .arrow-diag { opacity: 0; }
-#welcome-close:hover .arrow-right { opacity: 1; }
 
 .control-group h2 {
   font-family: 'Besley', Georgia, serif;
@@ -474,6 +448,7 @@ button#redoBtn {
 button#undoBtn:hover,
 button#redoBtn:hover {
   background: #F2EDE9;
+  border: 1px solid var(--text);
   color: var(--text);
 }
 
