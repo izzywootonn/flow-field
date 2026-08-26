@@ -97,9 +97,12 @@ body {
   gap: var(--section-gap);
   padding: 20px 16px;
   overflow-y: auto;
+  border-left: 1px solid var(--sidebar-border);
+  border-right: 1px solid var(--sidebar-border);
+  border-bottom: 1px solid var(--sidebar-border);
   /* Firefox */
   scrollbar-width: thin;
-  scrollbar-color: var(--accent) transparent;
+  scrollbar-color: #F2EDE9 transparent;
 }
 
 /* Webkit (Chrome, Safari, Edge) */
@@ -110,11 +113,11 @@ body {
   background: transparent;
 }
 #sidebar::-webkit-scrollbar-thumb {
-  background: var(--accent);
+  background: #F2EDE9;
   border-radius: 3px;
 }
 #sidebar::-webkit-scrollbar-thumb:hover {
-  background: var(--text);
+  background: var(--accent-dim);
 }
 
 /* Persistent brand header — full-width, above tabs, never scrolls */

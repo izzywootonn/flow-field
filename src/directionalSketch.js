@@ -551,6 +551,7 @@ export default function makeDirectionalSketch(getParams, getMode, getShowSources
 
     p.mousePressed = () => {
       if (!isActive()) return;
+      if (!document.getElementById('welcome-overlay')?.classList.contains('hidden')) return;
       const inBounds = getMode() === 'edit'
         ? (p.mouseX >= -EDIT_TOLERANCE && p.mouseX <= p.width  + EDIT_TOLERANCE &&
            p.mouseY >= -EDIT_TOLERANCE && p.mouseY <= p.height + EDIT_TOLERANCE)

@@ -561,6 +561,7 @@ export default function makeSketch(getParams, getMode, getShowSources = () => tr
 
     p.mousePressed = () => {
       if (!isActive()) return;
+      if (!document.getElementById('welcome-overlay')?.classList.contains('hidden')) return;
       // In edit mode allow grabbing handles slightly outside the canvas boundary
       const inBounds = getMode() === 'edit'
         ? (p.mouseX >= -EDIT_TOLERANCE && p.mouseX <= p.width  + EDIT_TOLERANCE &&
