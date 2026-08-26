@@ -41,7 +41,7 @@ body {
   flex-shrink: 0;
   background: var(--sidebar-bg);
   position: relative;
-  padding: 0 16px;
+  padding: 6px 16px 0;
   align-items: flex-end;
 }
 
@@ -95,11 +95,17 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--section-gap);
-  padding: 20px 16px;
+  padding: 20px 16px 20px 20px;
   overflow-y: auto;
+  direction: rtl; /* moves scrollbar to left side */
   /* Firefox */
   scrollbar-width: thin;
-  scrollbar-color: var(--sidebar-border) transparent;
+  scrollbar-color: var(--accent) transparent;
+}
+
+/* Restore LTR for all sidebar content */
+#sidebar > * {
+  direction: ltr;
 }
 
 /* Webkit (Chrome, Safari, Edge) */
@@ -110,11 +116,11 @@ body {
   background: transparent;
 }
 #sidebar::-webkit-scrollbar-thumb {
-  background: var(--sidebar-border);
+  background: var(--accent);
   border-radius: 3px;
 }
 #sidebar::-webkit-scrollbar-thumb:hover {
-  background: var(--accent);
+  background: var(--text);
 }
 
 /* Persistent brand header — full-width, above tabs, never scrolls */
@@ -291,6 +297,12 @@ input[type="range"]::-moz-range-thumb {
   background: var(--accent);
   border: none;
   cursor: pointer;
+}
+
+/* Tighten gap between field sliders and scatter/show sources toggles */
+#magnetic-controls,
+#directional-controls {
+  margin-bottom: -10px;
 }
 
 /* Mode toggle */
@@ -496,6 +508,7 @@ button#clear:hover {
     flex-wrap: wrap;
     gap: 12px;
     padding: 12px;
+    direction: ltr; /* reset RTL (used for left scrollbar on desktop) */
   }
 
   #sidebar h1 {
