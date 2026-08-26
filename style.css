@@ -50,7 +50,7 @@ body {
   border-radius: 4px 4px 0 0;
   color: var(--text-dim);
   font-family: 'Hanken Grotesk', system-ui, sans-serif;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -79,8 +79,8 @@ body {
 
 /* Sidebar */
 #sidebar {
-  width: 360px;
-  min-width: 360px;
+  width: 300px;
+  min-width: 300px;
   background: var(--sidebar-bg);
   border-right: 1px solid var(--sidebar-border);
   display: flex;
@@ -108,7 +108,7 @@ body {
 
 .attribution {
   font-family: 'Hanken Grotesk', system-ui, sans-serif;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 400;
   color: var(--text-dim);
   letter-spacing: 0.02em;
@@ -208,7 +208,7 @@ body {
 
 .control-group h2 {
   font-family: 'Besley', Georgia, serif;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -225,7 +225,7 @@ body {
   justify-content: space-between;
   margin-bottom: 4px;
   color: var(--text);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .control label span {
@@ -275,7 +275,7 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 4px;
   color: var(--text-dim);
   font-family: 'Hanken Grotesk', system-ui, sans-serif;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s;
@@ -320,7 +320,7 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .color-row label {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text);
 }
 
@@ -369,7 +369,7 @@ button#clear {
   background: var(--accent-dim);
   color: var(--accent);
   font-family: 'Hanken Grotesk', system-ui, sans-serif;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.05em;
   cursor: pointer;
@@ -427,7 +427,7 @@ button#clear:hover {
 }
 
 .hint {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--text-dim);
   line-height: 1.5;
   margin-top: 8px;
