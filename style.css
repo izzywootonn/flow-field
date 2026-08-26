@@ -213,7 +213,7 @@ body {
 
 #welcome-modal a {
   color: var(--sidebar-bg);
-  text-decoration: none;
+  text-decoration: underline;
 }
 
 #welcome-modal a:hover {
@@ -342,9 +342,9 @@ input[type="range"]::-moz-range-thumb {
   border-color: var(--text);
 }
 .mode-toggle .mode-btn.active {
-  background: var(--text-dim);
-  border-color: var(--text-dim);
-  color: var(--bg);
+  background: #F2EDE9;
+  border-color: var(--text);
+  color: var(--text);
 }
 
 /* chaosBtn is now a .mode-btn — active state handled by .mode-btn.active */
