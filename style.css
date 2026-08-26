@@ -39,7 +39,6 @@ body {
 #tab-bar {
   display: flex;
   flex-shrink: 0;
-  height: 36px;
   background: var(--sidebar-bg);
   position: relative;
   padding: 0 16px;
@@ -53,12 +52,12 @@ body {
   bottom: 0;
   left: 0;
   width: 300px;
-  height: 1.5px;
+  height: 3px;
   background: var(--sidebar-border);
 }
 
 .tab-btn {
-  padding: 6px 18px;
+  padding: 10px 18px;
   background: transparent;
   border: none;
   border-radius: 4px 4px 0 0;
