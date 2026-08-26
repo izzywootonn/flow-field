@@ -6,12 +6,12 @@
 
 :root {
   --bg: #00382c;
-  --sidebar-bg: #003d30;
-  --sidebar-border: #005540;
+  --sidebar-bg: #02473a;
+  --sidebar-border: #00382c;
   --text: #faf7f5;
-  --text-dim: #6ea898;
+  --text-dim: #c0e2d5;
   --accent: #c0e2d5;
-  --accent-dim: #004d3c;
+  --accent-dim: #00382c;
   --danger: #ee6b5b;
   --section-gap: 20px;
 }
@@ -93,7 +93,7 @@ body {
 /* Brand block: title + attribution grouped together */
 .sidebar-brand {
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--sidebar-border);
+  border-bottom: 1.5px solid var(--sidebar-border);
 }
 
 #sidebar h1 {
@@ -130,7 +130,7 @@ body {
 #welcome-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 28, 20, 0.92);
+  background: rgba(0, 56, 44, 0.92);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   display: flex;
@@ -144,7 +144,7 @@ body {
 }
 
 #welcome-modal {
-  background: var(--bg);
+  background: var(--text);
   border-radius: 12px;
   padding: 52px 60px;
   max-width: 480px;
@@ -162,24 +162,24 @@ body {
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--bg);
   line-height: 1.5;
 }
 
 #welcome-modal p {
   font-size: 13px;
-  color: var(--text);
+  color: var(--bg);
   line-height: 1.7;
   text-wrap: balance;
 }
 
 #welcome-modal .welcome-tagline {
-  color: var(--text);
+  color: var(--sidebar-bg);
   font-style: italic;
 }
 
 #welcome-modal a {
-  color: var(--accent);
+  color: var(--sidebar-bg);
   text-decoration: none;
 }
 
@@ -190,10 +190,10 @@ body {
 #welcome-close {
   margin-top: 12px;
   padding: 11px 36px;
-  background: var(--accent);
+  background: var(--bg);
   border: none;
   border-radius: 4px;
-  color: var(--bg);
+  color: var(--text);
   font-family: 'Hanken Grotesk', system-ui, sans-serif;
   font-size: 12px;
   font-weight: 600;
@@ -203,7 +203,7 @@ body {
 }
 
 #welcome-close:hover {
-  background: var(--text);
+  background: var(--sidebar-bg);
 }
 
 .control-group h2 {
@@ -271,7 +271,7 @@ input[type="range"]::-moz-range-thumb {
   flex: 1;
   padding: 7px 0;
   background: transparent;
-  border: 1px solid var(--sidebar-border);
+  border: 1.5px solid var(--sidebar-border);
   border-radius: 4px;
   color: var(--text-dim);
   font-family: 'Hanken Grotesk', system-ui, sans-serif;
@@ -295,7 +295,7 @@ input[type="range"]::-moz-range-thumb {
 /* Chaos button active state — solid fill to clearly signal "on" */
 #chaosBtn.active {
   background: var(--accent);
-  color: #fff;
+  color: #00382c;
 }
 
 /* Toggle button inside color-row — compact, no flex-stretch */
@@ -353,6 +353,7 @@ input[type="color"]::-webkit-color-swatch {
   flex: 1;
 }
 
+/* Shared base for all action buttons */
 button#randomize,
 button#chaosBtn,
 button#exportSvg,
@@ -366,7 +367,7 @@ button#clear {
   padding: 8px 0;
   border-radius: 4px;
   border: 1px solid var(--accent);
-  background: var(--accent-dim);
+  background: transparent;
   color: var(--accent);
   font-family: 'Hanken Grotesk', system-ui, sans-serif;
   font-size: 13px;
@@ -376,32 +377,44 @@ button#clear {
   transition: all 0.15s;
 }
 
+/* Randomize + Scatter — solid dark fill, no border, pale green text */
+button#randomize,
+button#chaosBtn {
+  background: var(--bg);
+  border-color: transparent;
+}
+
 button#randomize:hover,
-button#chaosBtn:hover,
+button#chaosBtn:hover {
+  background: var(--accent-dim);
+  border-color: transparent;
+}
+
+/* Export buttons — accent border, hover fills accent */
 button#exportSvg:hover,
 button#exportDirectionalSvg:hover,
 button#exportMagneticPng:hover,
-button#exportDirectionalPng:hover,
-button#undoBtn:hover,
-button#redoBtn:hover {
+button#exportDirectionalPng:hover {
   background: var(--accent);
-  color: #fff;
+  color: #00382c;
 }
 
-button#randomize,
-button#chaosBtn,
-button#exportSvg,
-button#exportDirectionalSvg,
-button#exportMagneticPng,
-button#exportDirectionalPng {
-  border-color: var(--accent);
-  background: transparent;
-  color: var(--accent);
+/* Undo / Redo — white border + white text */
+button#undoBtn,
+button#redoBtn {
+  border-color: var(--text);
+  color: var(--text);
+}
+
+button#undoBtn:hover,
+button#redoBtn:hover {
+  background: var(--text);
+  color: var(--bg);
 }
 
 .export-section {
   padding-top: 16px;
-  border-top: 1px solid var(--sidebar-border);
+  border-top: 1.5px solid var(--sidebar-border);
   display: flex;
   flex-direction: column;
 }
@@ -416,14 +429,14 @@ button#exportDirectionalPng {
 }
 
 button#clear {
-  border-color: var(--sidebar-border);
-  background: transparent;
-  color: var(--text-dim);
+  border: none;
+  background: var(--accent);
+  color: var(--bg);
 }
 
 button#clear:hover {
-  border-color: var(--danger);
-  color: var(--danger);
+  background: var(--text);
+  color: var(--bg);
 }
 
 .hint {
@@ -441,7 +454,7 @@ button#clear:hover {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: var(--bg);
+  background: var(--sidebar-bg);
 }
 
 #canvas-container canvas,
