@@ -157,7 +157,7 @@ body {
 }
 
 .attribution a:hover {
-  color: var(--text);
+  color: #c0e2d5;
 }
 
 /* ── Welcome modal ────────────────────────────────────────────────────────── */
@@ -217,7 +217,7 @@ body {
 }
 
 #welcome-modal a:hover {
-  text-decoration: underline;
+  color: #c0e2d5;
 }
 
 /* X close button — top-right corner of modal */
