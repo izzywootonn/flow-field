@@ -56,7 +56,7 @@ let activeTab    = 'magnetic';
 const hintEl = document.getElementById('hint');
 
 const HINTS = {
-  point: 'Click to place a point source',
+  point: 'Click to place a point source · Double click to edit',
   line:  'Click to place points · Enter to finish · Escape to cancel',
   edit:  'Click to select · Drag empty space to multi-select · Drag to move · Double-click vertex to toggle bezier · Delete to remove',
 };
